@@ -97,9 +97,9 @@ class App extends Component {
     yesterday = String(yesterday.getDate()).padStart(2, '0') + "/" + String(yesterday.getMonth() + 1).padStart(2, '0') + "/" + yesterday.getFullYear();
 
     if(date == today) {
-      return "&middot; Today";
+      return "&middot; 今天";
     }else if(date == yesterday){
-      return "&middot; Yesterday"
+      return "&middot; 昨天"
     }else{
       return "";
     }

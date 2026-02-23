@@ -1,15 +1,14 @@
 {
-  "name": "memo",
-  "productName": "Memo",
-  "description": "Take smarter notes with GitHub gists.",
-  "version": "1.0.3",
-  "author": "Burak Tokak <info@buraktokak.com> (https://buraktokak.com/)",
+  "name": "waynememo",
+  "productName": "WayneMemo",
+  "description": "完全离线的本地笔记应用，基于 Memo 开发",
+  "version": "1.0.0",
+  "author": "Wayne Shen",
   "copyright": "GPLv3",
   "license": "GPLv3",
   "private": true,
   "main": "src/electron.js",
   "dependencies": {
-    "@octokit/rest": "^16.35.0",
     "file-saver": "^2.0.2",
     "jsstore": "^3.4.4",
     "react": "^16.8.6",
@@ -19,24 +18,25 @@
     "write-good": "^1.0.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "NODE_OPTIONS=--openssl-legacy-provider react-scripts start",
+    "build": "NODE_OPTIONS=--openssl-legacy-provider react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "push": "react-scripts build && aws s3 rm s3://app.usememo.com --recursive && aws s3 cp build s3://app.usememo.com --recursive && aws s3 cp build s3://app.usememo.com/ --recursive --exclude * --include precache*.js --include service-worker.js --metadata-directive REPLACE --cache-control max-age=0,no-cache,no-store,must-revalidate --content-type application/javascript --acl public-read",
-    "icon": "./node_modules/.bin/electron-icon-maker --input=./src/assets/memo_desktop_png.png --output=./src/assets",
     "app": "electron .",
-    "app-mac": "electron-packager . --overwrite --platform=darwin --arch=x64 --icon=src/assets/icons/mac/icon.icns --prune=true --out=release-builds",
-    "app-win": "electron-packager . --overwrite --asar --platform=win32 --arch=x64 --icon=src/assets/icons/win/icon.ico --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=CE --version-string.ProductName=\"Memo App\"",
-    "app-lin": "electron-packager . --overwrite --platform=linux --arch=x64 --icon=src/assets/icons/png/1024x1024.png --prune=true --out=release-builds",
-    "package": "yarn build && electron-builder build --publish never",
-    "package-all": "electron-builder build -mwl",
-    "package-mac": "electron-builder build --mac osx-sign=true",
-    "package-ci": "yarn build && electron-builder --publish always",
-    "package-linux": "electron-builder build --linux",
-    "package-win": "electron-builder build --win --x64"
+    "pack": "electron-builder",
+    "pack:win": "electron-builder --win",
+    "pack:mac": "electron-builder --mac",
+    "pack:mac:intel": "electron-builder --mac --x64",
+    "pack:mac:silicon": "electron-builder --mac --arm64",
+    "pack:all": "electron-builder -mwl",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:mac:intel": "npm run build && electron-builder --mac --x64",
+    "dist:mac:silicon": "npm run build && electron-builder --mac --arm64",
+    "dist:all": "npm run build && electron-builder -mwl"
   },
-  "homepage": "https://app.usememo.com",
+  "homepage": "./",
   "eslintConfig": {
     "extends": "react-app"
   },
@@ -47,25 +47,88 @@
     "not op_mini all"
   ],
   "devDependencies": {
-    "electron": "^7.1.7",
-    "electron-notarize": "^0.2.1"
+    "electron": "^28.0.0",
+    "electron-builder": "^24.13.3",
+    "sharp": "^0.34.5"
   },
   "build": {
-    "afterSign": "scripts/notarize.js",
-    "appId": "com.usememo.app",
+    "appId": "com.wayneshen.waynememo",
+    "productName": "WayneMemo",
+    "copyright": "Copyright © 2024 Wayne Shen",
     "files": [
       "src/electron.js",
+      "public/electron.js",
+      "build/**/*",
       "package.json"
     ],
     "directories": {
-      "buildResources": "resources"
+      "buildResources": "resources",
+      "output": "release-builds"
+    },
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "src/assets/icons/win/icon.ico",
+      "publisherName": "Wayne Shen"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "WayneMemo",
+      "installerIcon": "src/assets/icons/win/icon.ico",
+      "uninstallerIcon": "src/assets/icons/win/icon.ico",
+      "installerHeaderIcon": "src/assets/icons/win/icon.ico",
+      "license": "LICENSE"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        },
+        {
+          "target": "zip",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "src/assets/icons/mac/icon.icns",
+      "category": "public.app-category.productivity",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
     },
     "dmg": {
       "sign": false,
+      "backgroundColor": "#ffffff",
+      "window": {
+        "width": 540,
+        "height": 380
+      },
       "contents": [
         {
           "x": 130,
-          "y": 220
+          "y": 220,
+          "type": "file"
         },
         {
           "x": 410,
@@ -75,35 +138,30 @@
         }
       ]
     },
-    "mac": {
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false,
-      "entitlements": "./src/entitlements.mac.inherit.plist",
-      "entitlementsInherit": "./src/entitlements.mac.inherit.plist",
-      "target": [
-        "dmg",
-        "zip"
-      ]
-    },
-    "win": {
-      "target": [
-        "nsis",
-        "msi"
-      ]
-    },
     "linux": {
       "target": [
-        "deb",
-        "rpm",
-        "AppImage"
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
       ],
-      "category": "Productivity"
-    },
-    "publish": {
-      "provider": "github",
-      "owner": "btk",
-      "repo": "memo",
-      "private": true
+      "icon": "src/assets/icons/png",
+      "category": "Office",
+      "maintainer": "Wayne Shen",
+      "vendor": "Wayne Shen",
+      "synopsis": "完全离线的本地笔记应用",
+      "description": "WayneMemo - 一个基于 Memo 开发的完全离线本地笔记应用"
     }
+  },
+  "optionalDependencies": {
+    "fsevents": "^2.3.3"
   }
 }

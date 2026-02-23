@@ -51,7 +51,7 @@ class Files {
                 cover.className = "cover";
               });
             }else{
-              alert("File should be a plaintext format (.txt, .md or .markdown) in order to import in Memo");
+              alert("文件必须是纯文本格式（.txt、.md 或 .markdown）才能导入到 WayneMemo");
               cover.className = "cover";
             }
           };
@@ -123,7 +123,7 @@ class Files {
     try {
         var isFileSaverSupported = !!new Blob;
     } catch (e) {
-      alert("Your device doesn't support file saver!");
+      alert("您的设备不支持文件保存功能！");
     }
 
     return Markdown.getSheetMarkdown(sheetId, true).then((sheet) => {

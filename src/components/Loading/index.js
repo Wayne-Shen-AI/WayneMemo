@@ -4,8 +4,7 @@ import API from '../../js/api';
 
 const quoteRand = Math.floor(Math.random() * (4 - 0 + 1) ) + 0;
 
-class App extends Component {
-
+class Loading extends Component {
   state = {
     spinning: true
   }
@@ -16,41 +15,39 @@ class App extends Component {
     });
 
     API.event.on("checkingUpdates", () => {
-      this.setState({statusText: "Checking for updates..."});
+      this.setState({statusText: "正在检查更新..."});
     });
 
     API.event.on("fetching", () => {
-      this.setState({statusText: "Processing data from GitHub..."});
+      this.setState({statusText: "正在从 GitHub 获取数据..."});
     });
 
     API.event.on("fetched", () => {
       this.setState({statusText: ""});
     });
-
-
   }
 
   renderQuote(){
     let quoteArray = [
       {
-        person: "Muhammed Ali",
-        quote: "Wake up everyday, expecting resistance, and push through it!"
+        person: "穆罕默德·阿里",
+        quote: "每天都带着期待迎接挑战，然后全力以赴！"
       },
       {
-        person: "Bruce Lee",
-        quote: "There are no limits. There are only plateaus, and you must not stay there, you must go beyond them."
+        person: "李小龙",
+        quote: "没有极限，只有平台期，你不能停留在那里，必须超越它。"
       },
       {
-        person: "Walt Disney",
-        quote: "When you believe in a thing, believe in it all the way, implicitly and unquestionable."
+        person: "华特·迪士尼",
+        quote: "当你相信一件事时，就全心全意地相信它，毫无保留。"
       },
       {
-        person: "Nelson Mandela",
-        quote: "It always seems impossible until it's done."
+        person: "纳尔逊·曼德拉",
+        quote: "凡事在成功之前看起来都像是 impossible。"
       },
       {
-        person: "Kobe Bryant",
-        quote: "If you’re afraid to fail, then you’re probably going to fail."
+        person: "科比·布莱恩特",
+        quote: "如果你害怕失败，那你很可能会失败。"
       }
     ];
 
@@ -68,7 +65,7 @@ class App extends Component {
   render() {
     return (
       <div className="Loading" style={{height: this.props.height}}>
-        {this.props.quote && <img src={API.getTheme() == "dark" ? require("../../assets/memo_logo_left_white.svg"):require("../../assets/memo_logo_left.svg")} style={{marginBottom: 10, width: 159, height: 42}}/>}
+        {this.props.quote && <img src={API.getTheme() == "dark" ? require("../../assets/memo_logo_left_white.png"):require("../../assets/memo_logo_left.png")} style={{marginBottom: 10, width: 159, height: 42}} alt="WayneMemo"/>}
         {this.state.spinning &&
           <>
             <div className="spinner">
@@ -84,4 +81,4 @@ class App extends Component {
   }
 }
 
-export default App;
+export default Loading;

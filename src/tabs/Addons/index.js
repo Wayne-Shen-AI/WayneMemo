@@ -9,10 +9,9 @@ let addons = [
   require('../../addons/calculator/addon.json')
 ]
 
-
-class App extends Component {
+class Addons extends Component {
   state = {
-    addons: API.getData("addons") != null ? API.getData("addons") : API.defaultAddons
+    addons: API.getData("addons") != null ? API.getData("addons") : "|write-good||conversion||links||calculator|"
   }
 
   toggleAddon(slug){
@@ -31,8 +30,8 @@ class App extends Component {
   render() {
     return (
       <div className="TabCarrier AddonsTab">
-        <h4>Addons</h4>
-        <p className="sub">Discover and add tools to customise your note taking experience.</p>
+        <h4>插件</h4>
+        <p className="sub">发现并添加工具来自定义您的笔记体验。</p>
         {
           addons.map((addon, i) => {
             return (
@@ -58,4 +57,4 @@ class App extends Component {
   }
 }
 
-export default App;
+export default Addons;

@@ -3,8 +3,7 @@ import './style.css';
 import API from '../../js/api';
 import Loading from '../../components/Loading';
 
-class App extends Component {
-
+class Search extends Component {
   state = {
     searchTerm: "",
     sheets: [],
@@ -14,7 +13,6 @@ class App extends Component {
   componentDidMount(){
     setTimeout(() => {
       this.refs._searchInput.focus();
-
     }, 200);
   }
 
@@ -23,7 +21,6 @@ class App extends Component {
       let searchTerm = e.target.value;
       this.setState({searchTerm});
       API.searchSheets(searchTerm).then(sheets => {
-
         let noSheets = (sheets.length === 0);
         this.setState({sheets, noSheets});
       })
@@ -41,15 +38,15 @@ class App extends Component {
             onClick={() => API.event.emit("sheet", sheet.id)}>
             <div className="sheetRight">
               <span>{sheet.title}</span>
-              <div className="sub">{sheet.first_line ? sheet.first_line.substr(0, 50).replace(/-/g, "") + "..." : "This sheet is as empty as it can be..."}</div>
+              <div className="sub">{sheet.first_line ? sheet.first_line.substr(0, 50).replace(/-/g, "") + "..." : "这是一个空笔记..."}</div>
 
               <div className="subHolder">
-                <sub>{date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear()}</sub>
+                <sub>{date.getFullYear() + "/" + (date.getMonth() + 1) + "/" + date.getDate()}</sub>
                 {sheet.first_line &&
-                  <sub>{sheet.line_count} Line{sheet.line_count != 1 ? "s": ""}</sub>
+                  <sub>{sheet.line_count} 行</sub>
                 }
                 {!sheet.first_line &&
-                  <sub>Blank</sub>
+                  <sub>空白</sub>
                 }
               </div>
             </div>
@@ -58,7 +55,7 @@ class App extends Component {
       });
     }else{
       if(this.state.noSheets){
-        return (<div className="tabNotice">No results with this term</div>);
+        return (<div className="tabNotice">没有找到匹配的结果</div>);
       }else{
         return (<Loading height={200}/>);
       }
@@ -69,14 +66,14 @@ class App extends Component {
     return (
       <div className="TabCarrier SearchTab">
         <div className={this.state.searchTerm ? "SearchHead SearchHeadHidden" : "SearchHead"}>
-          <h4>Search</h4>
-          <p className="sub">Search for a term in title or content of your notes.</p>
+          <h4>搜索</h4>
+          <p className="sub">在笔记标题和内容中搜索关键词。</p>
         </div>
         <input
           ref="_searchInput"
           className="searchInput"
           value={this.state.searchTerm}
-          placeholder="Search in your notes..."
+          placeholder="搜索笔记..."
           onChange={(event) => this.handleChange(event)}/>
 
         <div className="SearchResults">
@@ -87,4 +84,4 @@ class App extends Component {
   }
 }
 
-export default App;
+export default Search;

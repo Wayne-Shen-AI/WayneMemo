@@ -1,66 +1,81 @@
-<img src="src/assets/memo_logo_left.svg"/>
+# WayneMemo
 
-Memo is an opensource browser and desktop app that allows you to take smarter notes with GitHub Gists. Own your own private data, store it with Github's gists and access it from anywhere, anytime.
+<img src="src/assets/memo_logo_left.png" width="159" height="42"/>
 
-Check out Memo App: [https://usememo.com](https://usememo.com).
+WayneMemo 是一个完全离线的本地笔记应用，基于开源项目 [Memo](https://github.com/btk/memo) 开发。所有数据存储在本地，无需网络连接，保护您的隐私。
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## 特性
 
-## Available Scripts
+- 完全离线 - 所有数据保存在本地，无需网络
+- 本地文件存储 - 笔记以 Markdown 格式存储在本地文件夹
+- 双栏编辑器 - 左侧编辑，右侧实时预览
+- 深色/浅色主题 - 支持自定义主题
+- 智能搜索 - 快速查找笔记内容
+- 自动保存 - 编辑内容自动保存
+- 跨平台 - 支持 Windows、macOS (Intel & Apple Silicon)
 
-In the project directory, you can run:
+## 数据存储位置
 
-### `npm start`
+您的笔记数据保存在以下位置：
 
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- **macOS**: `~/Documents/WayneMemo_Data/`
+- **Windows**: `C:\Users\<用户名>\Documents\WayneMemo_Data\`
 
-The page will reload if you make edits.<br>
-You will also see any lint errors in the console.
+数据文件格式：
+- `metadata.json` - 笔记索引和配置
+- `notes/*.md` - Markdown 格式的笔记内容
 
-### `npm test`
+## 安装
 
-Launches the test runner in the interactive watch mode.<br>
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+从 [Releases](https://github.com/WayneShen2007/WayneMemo/releases) 页面下载对应平台的安装包：
 
-### `npm run build`
+- **macOS Apple Silicon**: `WayneMemo-1.0.0-arm64.dmg`
+- **macOS Intel**: `WayneMemo-1.0.0.dmg`
+- **Windows**: `WayneMemo Setup 1.0.0.exe`
 
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 开发
 
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+### 环境要求
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- Node.js 16+
+- npm 或 yarn
 
-### `npm run app`
+### 安装依赖
 
-Creates and starts the electron app for your local OS.<br>
-This is intended for development tests. Also you can toggle `dev` constant in `src/electron.js` file to change between production and development.
+```bash
+npm install
+```
 
-### `npm run package`
+### 开发模式
 
-Try to package electron app for all OS.<br>
-Make sure you `dev` constant in `src/electron.js` file is set to false.
+```bash
+npm start
+```
 
-### `npm run push`
+### 构建应用
 
-Take a new build and upload this new build to amazon s3 server.<br>
-This will work only if you have proper access and credentials.
+```bash
+# macOS (Intel + Apple Silicon)
+npm run dist:mac
 
-## Learn More
+# Windows
+npm run dist:win
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+# 所有平台
+npm run dist:all
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 技术栈
 
-## Contributing
+- Electron 28
+- React 16
+- JsStore (IndexedDB)
+- marked (Markdown 渲染)
 
-Memo is currently in beta, it needs your help but not fully documented, or might have big systematic changes. But pull requests and bug fixes are still welcome.
+## 许可证
 
-Additionally, you might want to make an addon. We will publish a dedicated page or tutorial for how to do this. But you can go to `src/addons` and duplicate one of the addons to use as a template for yours.
+GPLv3
 
-Overall, please be respectful and inclusive, keep in mind that this app does not come with any warranty or liability.
+## 致谢
 
-
-<a href="https://www.producthunt.com/posts/memo-plain-smart-notes?utm_source=badge-featured&utm_medium=badge&utm_souce=badge-memo-plain-smart-notes" target="_blank"><img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=179543&theme=light" alt="Memo - Plain & Smart Notes - Take smarter notes with GitHub Gists, anywhere. | Product Hunt Embed" style="width: 250px; height: 54px;" width="250px" height="54px" /></a>
+基于 [Memo](https://github.com/btk/memo) 开源项目开发。

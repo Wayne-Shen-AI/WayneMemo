@@ -1,455 +1,305 @@
-import makeid from './makeid';
 import Event from './event';
-import LocalDB from './localdb';
-import Analytics from 'react-ga';
-import Github from './octokit';
-import Markdown from './markdown';
-import Files from './files';
+import makeid from './makeid';
 
-const URL = "https://api.usememo.com/";
+const VERSION = "1.0.0";
 const DEVELOPMENT = false;
-const VERSION = "0.6.4";
-const ANONYMOUS_USER = {
-  username: 'Guest'
+
+// 检测是否在 Electron 环境
+const isElectron = () => {
+  return window && window.process && window.process.type;
+};
+
+// 获取 ipcRenderer（仅在 Electron 中可用）
+let ipcRenderer = null;
+if (isElectron()) {
+  const { ipcRenderer: ipc } = window.require('electron');
+  ipcRenderer = ipc;
 }
 
 class API {
-  constructor(){
-    Analytics.initialize('UA-138987685-1');
-    this.development = DEVELOPMENT;
-		this.event = Event;
+  constructor() {
+    this.event = Event;
     this.version = VERSION;
-    this.online = window.navigator.onLine;
-    this.analytics = Analytics;
-    this.logged = false;
-    this.defaultAddons = "|write-good||conversion||links||calculator|";
-    this.loginInterval = false;
-    this.anonymousUser = ANONYMOUS_USER;
+    this.development = DEVELOPMENT;
+    this.logged = true; // 本地版默认已登录
+    this.theme = this.getData("theme") || "light";
+    this.currentSheet = null;
 
-    console.log("API: init");
+    console.log("API: init - Local Mode");
 
-    LocalDB.initDB().then(res => {
-      console.log("LocalDB: init");
-    });
-
+    // 自动初始化
+    this.init();
   }
 
-  isOnline(){
-    return this.online;
+  async init() {
+    if (isElectron()) {
+      // 确保有默认笔记
+      const notes = await this.getSheets(1);
+      if (notes.length === 0) {
+        // 创建欢迎笔记
+        await this.createWelcomeNote();
+      }
+      this.event.emit("login", true);
+      this.event.emit("sheet", "LAST_ACCESSED");
+    }
   }
 
-  githubLogin(){
-    var url = URL + "login/" + (DEVELOPMENT ? "development": "");
+  // 创建欢迎笔记
+  async createWelcomeNote() {
+    const welcomeContent = `# 欢迎使用 WayneMemo
 
-    fetch(url, { method: 'GET', credentials: 'include'})
-    .then(res => res.json())
-    .then((res) => {
-      if(res == null){
-        console.log("NO_AUTH");
-      }
-      if(res){
-        if(res.session_id){
-          console.log("Logged In");
-          this.logged = true;
-          this.user = res;
-          Github.init(this.user.token).then(status => {
-            console.log("initing...");
-            Github.checkUpdate().then(res => {
-              console.log("checked for updates...");
-              this.event.emit("sheet", "LAST_ACCESSED");
-              this.event.emit("login", true);
-            });
-          });
+这是一个完全离线的笔记应用。
 
-          Files.listenFileDrop();
-        }
-      }
-    }).catch(err => {
-      console.log(err);
-      this.offlineLogin();
-    });
-  }
+## 特点
 
-  offlineLogin(){
-    this.online = false;
-    console.log("Logging in: Offline");
-    this.logged = true;
-    return LocalDB.count("sheet").then(sheetCount => {
-      if(sheetCount == 0){
-        this.offlineFirstTime();
-      }else{
-        this.event.emit("sheet", "LAST_ACCESSED");
-        this.event.emit("login", true);
-      }
-    })
+- 📝 纯本地存储，数据完全由您掌控
+- 🔒 无需登录，无需网络连接
+- 📁 数据保存在文档目录下的 WayneMemo_Data 文件夹
+- 💾 自动保存，无需手动同步
 
-    Files.listenFileDrop();
-  }
+## 快捷键
 
-  offlineFirstTime(){
-    Markdown.offlineSetup().then((status) => {
-      console.log("Setting up first time offline", status);
-      if(status){
-        this.event.emit("sheet", "LAST_ACCESSED");
-        this.event.emit("login", true);
-      }
+- Ctrl/Cmd + S - 打开笔记列表
+- Ctrl/Cmd + F - 搜索笔记
+- Ctrl/Cmd + , - 设置
+- Esc - 关闭侧边栏
+
+开始记录您的想法吧！
+`;
+
+    const note = await ipcRenderer.invoke('create-note', '欢迎使用 WayneMemo');
+    await ipcRenderer.invoke('update-note', {
+      id: note.id,
+      content: welcomeContent
     });
   }
 
-  githubLogout(){
-    var url = URL + "logout/" + (DEVELOPMENT ? "development": "");
-
-    fetch(url, { method: 'GET'})
-    .then(res => res.json())
-    .then((res) => {
-      this.event.emit("login", false);
-    });
+  isOnline() {
+    return false; // 本地版始终返回离线
   }
 
-  sync(){
-    Github.sync().then(res => {
-      if(res.status == 200){
-        this.addToStaging("flush");
-      }
-    });
-  }
+  // 获取单条笔记
+  async getSheet(sheetId) {
+    if (!isElectron()) {
+      return this.getMockSheet(sheetId);
+    }
 
-  fetch(){
-    Github.fetch().then(res => {
-      if(res){
-        this.addToStaging("flush");
-        this.event.emit("sheet", "LAST_ACCESSED");
-      }
-    });
-  }
+    // 创建新笔记
+    if (sheetId === "NEW_SHEET") {
+      const newNote = await ipcRenderer.invoke('create-note', 'Untitled Sheet');
+      return {
+        id: newNote.id,
+        title: newNote.title,
+        active: 1,
+        lines: []
+      };
+    }
 
-  getTheme(){
-    return this.getData("theme") || "light";
-  }
-
-  getSheet(sheetId){
-    this.analytics.pageview("/sheet/"+sheetId);
-
-    let today = new Date();
-    let formattedTime = String(today.getDate()).padStart(2, '0') + "/" + String(today.getMonth() + 1).padStart(2, '0') + "/" + today.getFullYear();
-
-    let id = sheetId;
-    let time = Math.round((new Date()).getTime() / 1000);
-    let where, order;
-    let action = "";
-
-    if(action == "archive"){
-      // `sheet` SET `active` = 0 WHERE `id` = $id AND owner_id = $user_id
-      return LocalDB.update("sheet", {id}, {active: 0});
-    }else if(action == "active"){
-      return LocalDB.update("sheet", {id}, {active: 1});
-    }else if(action == "rm"){
-      //DELETE FROM `sheet` WHERE `id` = $id AND owner_id = $user_id
-      //DELETE FROM `line` WHERE `sheet_id` = $id
-      return LocalDB.delete("sheet", {id}).then((res) => {
-        return LocalDB.delete("line", {sheet_id: id});
-      });
-    }else{
-      if(id == "NEW_SHEET"){
-        // INTO `sheet` (`id`, `owner_id`, `title`, `active`, `created_at`, `accessed_at`) VALUES (NULL, '$user_id', 'Untitled Sheet', 1, '$time', '$time
-        return LocalDB.insert("sheet", {
-          title: "Untitled Sheet",
+    // 获取最近访问的笔记
+    if (sheetId === "LAST_ACCESSED") {
+      const notes = await ipcRenderer.invoke('get-notes-list');
+      if (notes.length > 0) {
+        const note = await ipcRenderer.invoke('get-note', notes[0].id);
+        this.currentSheet = note;
+        return note;
+      } else {
+        // 没有笔记时创建新笔记
+        const newNote = await ipcRenderer.invoke('create-note', 'Untitled Sheet');
+        return {
+          id: newNote.id,
+          title: newNote.title,
           active: 1,
-          created_at: time,
-          accessed_at: time
-        }).then(res => {
-          if(res){
-            //SELECT id FROM `sheet` WHERE owner_id = $user_id Order by accessed_at desc LIMIT 1
-            return LocalDB.select("sheet", null, {
-              by: "accessed_at",
-              type: "desc"
-            }, 1).then(res => {
-              let newAddedId = res[0].id;
-              let newLineKey = makeid(5);
-              //INSERT INTO `line` (`id`, `sheet_id`, `line_key`, `date`, `text`, `pos`) VALUES (NULL, '$id', '".uniqid()."', '$formatted_time', '', '0')
-              return LocalDB.insert("line", {
-                sheet_id: newAddedId,
-                line_key: newLineKey,
-                date: formattedTime,
-                text: "",
-                pos: 0
-              }).then(res => {
-                return LocalDB.select("sheet", {id: newAddedId}, null, 1).then((sheet) => {
-                  let newSheet = sheet[0];
-                  return LocalDB.select("line", {sheet_id: newAddedId}, {by: "pos", type: "asc"}).then(lines => {
-                    newSheet.lines = lines;
-                    return newSheet;
-                  })
-                })
-              })
-            });
-          }
-        })
+          lines: []
+        };
+      }
+    }
 
-      }else if(id == "LAST_ACCESSED"){
+    // 获取指定笔记
+    const note = await ipcRenderer.invoke('get-note', parseInt(sheetId));
+    this.currentSheet = note;
+    return note || "removed";
+  }
 
-        return LocalDB.select("sheet", {active: 1}, {
-          by: "accessed_at",
-          type: "desc"
-        }, 1).then(res => {
-          if(res[0]){
-            let lastSheet = res[0];
-            return LocalDB.select("line", {sheet_id: lastSheet.id}, {by: "pos", type: "asc"}).then(lines => {
-              lastSheet.lines = lines;
-              LocalDB.update("sheet", {id: lastSheet.id}, {accessed_at: time});
-              return lastSheet;
-            });
-          }else{
-            // Add a new sheet for the new user!
+  // 获取笔记列表
+  async getSheets(active, count = false) {
+    if (!isElectron()) {
+      return [];
+    }
 
-            return LocalDB.insert("sheet", {
-              title: "Untitled Sheet",
-              active: 1,
-              created_at: time,
-              accessed_at: time
-            }).then(res => {
-              if(res){
-                //SELECT id FROM `sheet` WHERE owner_id = $user_id Order by accessed_at desc LIMIT 1
-                return LocalDB.select("sheet", null, {
-                  by: "accessed_at",
-                  type: "desc"
-                }, 1).then(res => {
-                  let newAddedId = res[0].id;
-                  let newLineKey = makeid(5);
-                  //INSERT INTO `line` (`id`, `sheet_id`, `line_key`, `date`, `text`, `pos`) VALUES (NULL, '$id', '".uniqid()."', '$formatted_time', '', '0')
-                  return LocalDB.insert("line", {
-                    sheet_id: newAddedId,
-                    line_key: newLineKey,
-                    date: formattedTime,
-                    text: "",
-                    pos: 0
-                  }).then(res => {
-                    return LocalDB.select("sheet", {id: newAddedId}).then((sheet) => {
-                      let newSheet = sheet[0];
-                      return LocalDB.select("line", {sheet_id: newAddedId}, {by: "pos", type: "asc"}).then(lines => {
-                        newSheet.lines = lines;
-                        return newSheet;
-                      })
-                    })
-                  })
-                });
-              }
-            });
+    if (active === 1) {
+      const notes = await ipcRenderer.invoke('get-notes-list');
+      if (count) {
+        return notes.length;
+      }
+      return notes;
+    } else {
+      const notes = await ipcRenderer.invoke('get-archived-notes');
+      if (count) {
+        return notes.length;
+      }
+      return notes;
+    }
+  }
 
-          }
-        })
+  // 搜索笔记
+  async searchSheets(term) {
+    if (!isElectron()) {
+      return [];
+    }
+    return await ipcRenderer.invoke('search-notes', term);
+  }
 
-      }else{
-        // id is a Number
-        return LocalDB.select("sheet", {id}).then((sheet) => {
-          let idSheet = sheet[0];
-          if(idSheet){
-            return LocalDB.select("line", {sheet_id: idSheet.id}, {by: "pos", type: "asc"}).then(lines => {
-              idSheet.lines = lines;
-              LocalDB.update("sheet", {id}, {accessed_at: time});
-              return idSheet;
-            });
-          }else{
-            return "removed";
-          }
+  // 更新行（段落）
+  async updateLine(id, pos, text, action, hint) {
+    if (!isElectron() || !this.currentSheet) return;
+
+    const sheetId = this.currentSheet.id;
+
+    // 获取当前笔记内容
+    const note = await ipcRenderer.invoke('get-note', sheetId);
+    if (!note) return;
+
+    let lines = note.lines;
+
+    if (action === "rm") {
+      // 删除行
+      lines = lines.filter(line => line.pos !== pos);
+      // 重新排序
+      lines.forEach((line, idx) => { line.pos = idx; });
+    } else {
+      // 更新或插入行
+      const existingIndex = lines.findIndex(line => line.pos === pos);
+      if (existingIndex >= 0) {
+        lines[existingIndex].text = text;
+      } else {
+        // 插入新行
+        lines.push({
+          line_key: makeid(5),
+          date: new Date().toLocaleDateString(),
+          text: text,
+          pos: pos
         });
       }
     }
-  }
 
-  getConversions(){
-    return fetch("https://api.exchangeratesapi.io/latest?base=USD")
-    .then(res => res.json());
-  }
-
-  async getSheets(active, count){
-
-    if(count){
-      let sheetCount = await LocalDB.count("sheet", {active: active});
-      return sheetCount;
-    }
-
-    let sheets = await LocalDB.select("sheet", {active: active}, {
-      by: "accessed_at",
-      type: "desc"
+    // 将 lines 转换为 markdown 内容
+    const content = lines.map(line => line.text).join('\n');
+    await ipcRenderer.invoke('update-note', {
+      id: sheetId,
+      content: content
     });
-
-    for (var i = 0; i < sheets.length; i++) {
-
-      let sheet = sheets[i];
-      let lines = await LocalDB.select("line", {sheet_id: sheet.id}, {by: "pos", type: "asc"});
-      if(lines[0]){
-        sheets[i].first_line = lines[0].text.replace(/<[^>]*>|#/g, '');
-      }else{
-        sheets[i].first_line = "";
-      }
-      sheets[i].line_count = lines.length;
-    }
-
-    return sheets;
   }
 
-  async searchSheets(term){
-    let sheets = await LocalDB.select("sheet", {title: {like: '%'+term+'%'}}, {
-      by: "accessed_at",
-      type: "desc"
-    });
-
-    for (var i = 0; i < sheets.length; i++) {
-      let sheet = sheets[i];
-      let lines = await LocalDB.select("line", {sheet_id: sheet.id}, {by: "pos", type: "asc"});
-      sheets[i].first_line = lines[0].text.replace(/<[^>]*>|#/g, '');
-      sheets[i].line_count = lines.length;
-    }
-
-    return sheets;
-  }
-
-  updateLine(id, pos, text, action, hint){
-    // pos, text, action, hint
-    let date = id.split("-")[0].split("!")[1];
-    let line_key = id.split("-")[1];
-    let sheet_id = Number(id.split("-")[0].split("!")[0]);
-    this.addToStaging(sheet_id);
-
-    if(action == "rm"){
-      //DELETE FROM `line` WHERE `date` = '$date' AND `sheet_id` = '$sheetId' AND `pos` = '$pos
-      //UPDATE `line` SET pos = pos-1 WHERE `pos` >= $pos AND sheet_id = $sheetId
-      return LocalDB.delete("line", {date, sheet_id, pos}).then(() => {
-        return LocalDB.update("line", {
-          pos: {
-            '>=': pos
-          },
-          sheet_id
-        }, {
-          pos: {
-            '-': 1
-          }
-        });
-      });
-    }else{
-      let setFound = {text};
-      let whereCheck = {date, sheet_id, pos, line_key};
-      if(action == "key"){
-        setFound.line_key = line_key;
-        whereCheck.line_key = hint;
-      }
-
-      //SELECT id FROM `line` WHERE `date` = '$date' AND `sheet_id` = '$sheetId' AND `pos` = '$pos' AND `line_key` = '$checkKey' LIMIT 1
-      return LocalDB.select("line", whereCheck, null, 1).then((line) => {
-        if(line.length == 1){
-          //UPDATE `line` SET `text` = '$text'$updateKey WHERE `id` = $lineId
-          return LocalDB.update("line", {id: line[0].id}, setFound);
-        }else{
-          //UPDATE `line` SET pos = pos+1 WHERE `pos` >= $pos AND sheet_id = $sheetId
-
-          return LocalDB.select("line", {
-            pos: {
-              '>=': pos
-            },
-            sheet_id
-          }).then(res => {
-            res.forEach(line => {
-              LocalDB.update("line", {
-                id: line.id
-              }, {
-                pos: {
-                  '+': 1
-                }
-              })
-            });
-            //INSERT INTO `line` (`id`, `sheet_id`, `line_key`, `date`, `text`, `pos`) VALUES (NULL, '$sheetId', '$key', '$date', '$text', '$pos
-            return LocalDB.insert("line", {
-              sheet_id,
-              line_key,
-              date,
-              text,
-              pos
-            });
-          });
-        }
-      });
-    }
-  }
-
-  updateTitle(text, sheetId){
-    this.addToStaging(sheetId);
-    return LocalDB.update("sheet", {
-      id: sheetId
-    }, {
+  // 更新标题
+  async updateTitle(text, sheetId) {
+    if (!isElectron()) return;
+    await ipcRenderer.invoke('update-note', {
+      id: sheetId,
       title: text
     });
   }
 
-  // toStatus is true or false
-  archiveUpdate(sheetId, toStatus){
-    this.addToStaging(sheetId);
-    return LocalDB.update("sheet", {
-      id: sheetId
-    }, {
-      active: toStatus ? 1 : 0
+  // 归档/激活笔记
+  async archiveUpdate(sheetId, toStatus) {
+    if (!isElectron()) return;
+    await ipcRenderer.invoke('archive-note', {
+      id: sheetId,
+      active: toStatus
     });
   }
 
-  deleteSheet(sheetId){
-    this.addToStaging(sheetId);
-    return LocalDB.delete("sheet", {
-      id: sheetId
-    }).then(sheet => {
-      return LocalDB.delete("line", {sheet_id: sheetId});
-    });
+  // 删除笔记
+  async deleteSheet(sheetId) {
+    if (!isElectron()) return;
+    await ipcRenderer.invoke('delete-note', sheetId);
   }
 
-  truncateDb(){
-    return LocalDB.truncate();
+  // 获取主题
+  getTheme() {
+    return this.getData("theme") || "light";
   }
 
-  updatePreference(pref, to){
+  // 更新偏好设置
+  updatePreference(pref, to) {
     this.setData(pref, to);
-    console.log(pref +": ", to);
-    if(this.isOnline()){
-      Github.pushPreference(pref, to).then(res => {
-        console.log("Cloud Preference Update: ", pref, to);
-      });
-    }
+    console.log(pref + ": ", to);
   }
 
-  addToStaging(sheetId){
-    if(sheetId == "flush"){
-      this.setData("staging", "");
-      console.log("staging is flushed");
-      this.event.emit("sync", "flushed");
-    }else{
-      let currentStaging = this.getData("staging") || "";
-      if(!currentStaging.includes(`|${sheetId}|`)){
-        if(currentStaging){
-          currentStaging += `,|${sheetId}|`;
-        }else{
-          currentStaging = `|${sheetId}|`;
-        }
-        this.setData("staging", currentStaging);
-        this.event.emit("sync", currentStaging.split(",").length);
-        console.log("Needs to sync: ", currentStaging);
-      }
-    }
+  // localStorage 封装
+  setData(key, data) {
+    return localStorage.setItem(key, data);
   }
 
-  setGistId(gistId){
-    this.user.gist_id = gistId;
-    var url = URL + "user/" + (DEVELOPMENT ? "development": "");
-    var formData = new FormData();
-    formData.append('gist_id', gistId);
-
-    return fetch(url, { method: 'POST', credentials: 'include', body: formData })
-    .then(res => res.json());
-  }
-
-  setData(key, data){
-		return localStorage.setItem(key, data);
-  }
-
-  getData(key){
+  getData(key) {
     return localStorage.getItem(key);
+  }
+
+  // Mock 数据（用于非 Electron 环境测试）
+  getMockSheet(sheetId) {
+    if (sheetId === "NEW_SHEET") {
+      return {
+        id: Date.now(),
+        title: "Untitled Sheet",
+        active: 1,
+        lines: [{
+          line_key: makeid(5),
+          date: new Date().toLocaleDateString(),
+          text: "",
+          pos: 0
+        }]
+      };
+    }
+    return {
+      id: 1,
+      title: "Mock Note",
+      active: 1,
+      lines: [{
+        line_key: makeid(5),
+        date: new Date().toLocaleDateString(),
+        text: "This is a mock note for testing",
+        pos: 0
+      }]
+    };
+  }
+
+  // 废弃的 GitHub 相关方法（保留空实现以兼容旧代码）
+  githubLogin() {
+    console.log("GitHub login disabled in local mode");
+  }
+
+  githubLogout() {
+    console.log("GitHub logout disabled in local mode");
+  }
+
+  sync() {
+    console.log("Sync disabled in local mode");
+    return Promise.resolve({ status: 200 });
+  }
+
+  fetch() {
+    console.log("Fetch disabled in local mode");
+    return Promise.resolve(true);
+  }
+
+  setGistId(gistId) {
+    console.log("Gist ID setting disabled in local mode");
+    return Promise.resolve({});
+  }
+
+  addToStaging(sheetId) {
+    // 本地模式不需要 staging
+  }
+
+  truncateDb() {
+    // 本地模式不提供此功能
+    console.log("Truncate disabled in local mode");
+    return Promise.resolve({});
+  }
+
+  getConversions() {
+    return fetch("https://api.exchangeratesapi.io/latest?base=USD")
+      .then(res => res.json())
+      .catch(() => ({ rates: { CNY: 7.2, USD: 1, EUR: 0.85 } }));
   }
 }
 

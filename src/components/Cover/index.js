@@ -1,28 +1,26 @@
 import React, { Component } from 'react';
 import './style.css';
-
 import API from '../../js/api'
 
-class App extends Component {
-
+class Cover extends Component {
   state = {
-    headText: "Drop to Import your notes",
-    smallText: "Only plaintext is supported!"
+    headText: "拖放文件导入笔记",
+    smallText: "仅支持纯文本格式（.txt, .md）"
   }
 
   componentDidMount(){
     API.event.on("importStarted", fileName => {
       this.setState({
-        headText: "Processing...",
-        smallText: "Please wait while processing " + fileName + "..."
+        headText: "正在处理...",
+        smallText: "正在处理文件：" + fileName
       })
     })
 
     API.event.on("importEnded", () => {
       setTimeout(() => {
         this.setState({
-          headText: "Drop to Import your notes",
-          smallText: "Only plaintext is supported!"
+          headText: "拖放文件导入笔记",
+          smallText: "仅支持纯文本格式（.txt, .md）"
         })
       }, 200);
     })
@@ -45,4 +43,4 @@ class App extends Component {
   }
 }
 
-export default App;
+export default Cover;
