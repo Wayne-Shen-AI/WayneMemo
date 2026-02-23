@@ -27,11 +27,32 @@ WayneMemo 是一个完全离线的本地笔记应用，基于开源项目 [Memo]
 
 ## 安装
 
-从 [Releases](https://github.com/WayneShen2007/WayneMemo/releases) 页面下载对应平台的安装包：
+## 下载安装
 
-- **macOS Apple Silicon**: `WayneMemo-1.0.0-arm64.dmg`
-- **macOS Intel**: `WayneMemo-1.0.0.dmg`
-- **Windows**: `WayneMemo Setup 1.0.0.exe`
+### 方式一：从源码构建
+```bash
+# 克隆仓库
+git clone https://github.com/Wayne-Shen-AI/WayneMemo.git
+cd WayneMemo
+
+# 安装依赖
+npm install
+
+# 构建应用
+npm run dist:mac   # macOS
+npm run dist:win   # Windows
+```
+
+### 方式二：直接下载安装包（推荐）
+从 [GitHub Releases](https://github.com/Wayne-Shen-AI/WayneMemo/releases) 下载对应平台的安装包：
+
+| 平台 | 安装包 |
+|------|--------|
+| macOS Apple Silicon | `WayneMemo-1.0.0-arm64.dmg` |
+| macOS Intel | `WayneMemo-1.0.0.dmg` |
+| Windows | `WayneMemo Setup 1.0.0.exe` |
+
+> 💡 **提示**: 如果没有 Release，可以使用方式一自行构建，构建后的安装包位于 `release-builds/` 目录。
 
 ## 开发
 
