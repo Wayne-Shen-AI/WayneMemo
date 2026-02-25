@@ -1,5 +1,5 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow, shell, ipcMain} = require('electron')
+const {app, BrowserWindow, shell, ipcMain, globalShortcut, Notification} = require('electron')
 const fs = require('fs')
 const path = require('path')
 
@@ -31,17 +31,146 @@ function ensureDataDir() {
   // 初始化 metadata 文件
   if (!fs.existsSync(METADATA_FILE)) {
     fs.writeFileSync(METADATA_FILE, JSON.stringify({
+      version: 1,
       lastId: 0,
       notes: [],
       userRole: null,
       enabledSkills: ['quickSearch', 'history']
     }, null, 2))
+  } else {
+    // 版本迁移：确保旧数据文件包含新字段
+    try {
+      const data = JSON.parse(fs.readFileSync(METADATA_FILE, 'utf-8'))
+      let needsUpdate = false
+      if (data.userRole === undefined) {
+        data.userRole = null
+        needsUpdate = true
+      }
+      if (data.enabledSkills === undefined) {
+        data.enabledSkills = ['quickSearch', 'history']
+        needsUpdate = true
+      }
+      if (data.version === undefined) {
+        data.version = 1
+        needsUpdate = true
+      }
+      if (needsUpdate) {
+        fs.writeFileSync(METADATA_FILE, JSON.stringify(data, null, 2))
+        console.log('Metadata migrated to version 1')
+      }
+    } catch (e) {
+      console.error('Failed to migrate metadata:', e)
+    }
   }
   // 初始化 snippets 文件
   if (!fs.existsSync(SNIPPETS_FILE)) {
     fs.writeFileSync(SNIPPETS_FILE, JSON.stringify({
-      snippets: []
+      snippets: [
+        {
+          id: 1,
+          alias: '待办',
+          content: '- [ ] 待办事项1\n- [ ] 待办事项2\n- [ ] 待办事项3',
+          description: '待办清单模板',
+          usageCount: 0,
+          createdAt: Math.round(Date.now() / 1000)
+        },
+        {
+          id: 2,
+          alias: '会议',
+          content: '## 会议记录\n\n**时间：** \n**参与人：** \n\n### 议题\n\n### 结论\n\n### 行动项\n- [ ] ',
+          description: '会议记录模板',
+          usageCount: 0,
+          createdAt: Math.round(Date.now() / 1000)
+        },
+        {
+          id: 3,
+          alias: '日报',
+          content: '## 工作日报\n\n**日期：** \n\n### 今日完成\n\n### 明日计划\n\n### 遇到的问题',
+          description: '日报模板',
+          usageCount: 0,
+          createdAt: Math.round(Date.now() / 1000)
+        },
+        {
+          id: 4,
+          alias: 'bug',
+          content: '## Bug 记录\n\n**现象：** \n**复现步骤：** \n**期望结果：** \n**实际结果：** \n**环境：** ',
+          description: 'Bug 报告模板',
+          usageCount: 0,
+          createdAt: Math.round(Date.now() / 1000)
+        },
+        {
+          id: 5,
+          alias: 'mtg',
+          content: '## 会议记录\n\n**时间：** \n**参与人：** \n\n### 议题\n\n### 结论\n\n### 行动项\n- [ ] ',
+          description: '会议记录模板',
+          usageCount: 0,
+          createdAt: Math.round(Date.now() / 1000)
+        },
+        {
+          id: 6,
+          alias: 'weekly',
+          content: '## 周记\n\n**第 周**\n\n### 本周总结\n\n### 下周计划\n\n### 个人思考',
+          description: '周记模板',
+          usageCount: 0,
+          createdAt: Math.round(Date.now() / 1000)
+        },
+        {
+          id: 7,
+          alias: 'code',
+          content: '```\n\n```',
+          description: '代码块',
+          usageCount: 0,
+          createdAt: Math.round(Date.now() / 1000)
+        },
+        {
+          id: 8,
+          alias: 'todo',
+          content: '- [ ] ',
+          description: '待办事项',
+          usageCount: 0,
+          createdAt: Math.round(Date.now() / 1000)
+        },
+        {
+          id: 9,
+          alias: 'link',
+          content: '[](http://)',
+          description: '链接格式',
+          usageCount: 0,
+          createdAt: Math.round(Date.now() / 1000)
+        }
+      ]
     }, null, 2))
+  } else {
+    // 文件已存在，检查并添加新的系统默认模板
+    try {
+      const data = JSON.parse(fs.readFileSync(SNIPPETS_FILE, 'utf-8'))
+      const existingAliases = new Set(data.snippets.map(s => s.alias))
+      const defaultSnippets = [
+        { id: 5, alias: 'mtg', content: '## 会议记录\n\n**时间：** \n**参与人：** \n\n### 议题\n\n### 结论\n\n### 行动项\n- [ ] ', description: '会议记录模板' },
+        { id: 6, alias: 'weekly', content: '## 周记\n\n**第 周**\n\n### 本周总结\n\n### 下周计划\n\n### 个人思考', description: '周记模板' },
+        { id: 7, alias: 'code', content: '```\n\n```', description: '代码块' },
+        { id: 8, alias: 'todo', content: '- [ ] ', description: '待办事项' },
+        { id: 9, alias: 'link', content: '[](http://)', description: '链接格式' }
+      ]
+
+      let added = false
+      defaultSnippets.forEach(template => {
+        if (!existingAliases.has(template.alias)) {
+          data.snippets.push({
+            ...template,
+            usageCount: 0,
+            createdAt: Math.round(Date.now() / 1000)
+          })
+          added = true
+        }
+      })
+
+      if (added) {
+        fs.writeFileSync(SNIPPETS_FILE, JSON.stringify(data, null, 2))
+      }
+    } catch (e) {
+      console.error('更新 snippets 失败:', e)
+    }
   }
   // 初始化 operation_logs 文件
   if (!fs.existsSync(OPERATION_LOGS_FILE)) {
@@ -51,14 +180,25 @@ function ensureDataDir() {
   }
 }
 
+// 默认元数据（包含所有新字段，确保向后兼容）
+const DEFAULT_METADATA = {
+  version: 1,
+  lastId: 0,
+  notes: [],
+  userRole: null,
+  enabledSkills: ['quickSearch', 'history']
+}
+
 // 读取元数据
 function readMetadata() {
   initPaths()
   try {
     const data = fs.readFileSync(METADATA_FILE, 'utf-8')
-    return JSON.parse(data)
+    const parsed = JSON.parse(data)
+    // 合并默认值，确保旧数据文件升级时包含新字段
+    return { ...DEFAULT_METADATA, ...parsed }
   } catch (e) {
-    return { lastId: 0, notes: [] }
+    return { ...DEFAULT_METADATA }
   }
 }
 
@@ -283,6 +423,17 @@ function registerIpcHandlers() {
     return DATA_DIR
   })
 
+  // IPC: 打开数据目录
+  ipcMain.handle('open-data-folder', async () => {
+    initPaths()
+    try {
+      await shell.openPath(DATA_DIR)
+      return { success: true }
+    } catch (e) {
+      return { success: false, error: e.message }
+    }
+  })
+
   // ========== 技能系统 IPC ==========
 
   // IPC: 获取用户角色
@@ -363,6 +514,23 @@ function registerIpcHandlers() {
       data.snippets = data.snippets.filter(s => s.id !== snippetId)
       fs.writeFileSync(SNIPPETS_FILE, JSON.stringify(data, null, 2))
       return { success: true }
+    } catch (e) {
+      return { success: false, error: e.message }
+    }
+  })
+
+  // IPC: 更新快捷码
+  ipcMain.handle('update-snippet', async (event, snippetId, updates) => {
+    initPaths()
+    try {
+      const data = JSON.parse(fs.readFileSync(SNIPPETS_FILE, 'utf-8'))
+      const snippet = data.snippets.find(s => s.id === snippetId)
+      if (snippet) {
+        Object.assign(snippet, updates)
+        fs.writeFileSync(SNIPPETS_FILE, JSON.stringify(data, null, 2))
+        return { success: true }
+      }
+      return { success: false, error: 'Snippet not found' }
     } catch (e) {
       return { success: false, error: e.message }
     }
@@ -461,6 +629,114 @@ function registerIpcHandlers() {
       return { success: false, error: e.message }
     }
   })
+
+  // ========== 每日碎片笔记提醒 IPC ==========
+
+  // IPC: 检查碎片笔记
+  ipcMain.handle('check-fragment-notes', async () => {
+    const metadata = readMetadata()
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const todayTimestamp = Math.round(today.getTime() / 1000)
+
+    let fragmentNotes = []
+
+    for (const note of metadata.notes) {
+      if (note.active !== 1) continue
+
+      // 检查是否是今天创建或修改的笔记
+      if (note.created_at >= todayTimestamp || note.accessed_at >= todayTimestamp) {
+        const notePath = getNoteFileName(note.id)
+        if (fs.existsSync(notePath)) {
+          const content = fs.readFileSync(notePath, 'utf-8')
+          // 检查内容长度是否小于50个字符
+          if (content.trim().length > 0 && content.trim().length < 50) {
+            fragmentNotes.push({
+              id: note.id,
+              title: note.title,
+              content: content.trim()
+            })
+          }
+        }
+      }
+    }
+
+    return {
+      count: fragmentNotes.length,
+      notes: fragmentNotes
+    }
+  })
+
+  // IPC: 触发每日碎片笔记检查（手动触发或定时触发）
+  ipcMain.handle('trigger-daily-review', async () => {
+    const result = await ipcMain.emit('check-fragment-notes')
+    const fragmentResult = await new Promise((resolve) => {
+      ipcMain.handleOnce('check-fragment-notes-internal', async () => {
+        const metadata = readMetadata()
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const todayTimestamp = Math.round(today.getTime() / 1000)
+
+        let fragmentNotes = []
+
+        for (const note of metadata.notes) {
+          if (note.active !== 1) continue
+
+          if (note.created_at >= todayTimestamp || note.accessed_at >= todayTimestamp) {
+            const notePath = getNoteFileName(note.id)
+            if (fs.existsSync(notePath)) {
+              const content = fs.readFileSync(notePath, 'utf-8')
+              if (content.trim().length > 0 && content.trim().length < 50) {
+                fragmentNotes.push({
+                  id: note.id,
+                  title: note.title,
+                  content: content.trim()
+                })
+              }
+            }
+          }
+        }
+
+        return {
+          count: fragmentNotes.length,
+          notes: fragmentNotes
+        }
+      })
+
+      ipcMain.emit('check-fragment-notes-internal')
+      setTimeout(() => {
+        resolve({ count: 0, notes: [] })
+      }, 100)
+    })
+
+    if (fragmentResult.count > 0) {
+      // 创建通知
+      const notification = new Notification({
+        title: '今日笔记梳理',
+        body: `您今天记录了 ${fragmentResult.count} 条碎片笔记，点击进行补全。`,
+        silent: false
+      })
+
+      notification.on('click', () => {
+        if (mainWindow) {
+          mainWindow.show()
+          mainWindow.focus()
+          // 发送消息到渲染进程，高亮显示碎片笔记
+          mainWindow.webContents.send('show-fragment-notes', {
+            count: fragmentResult.count,
+            notes: fragmentResult.notes
+          })
+        }
+      })
+
+      notification.show()
+    }
+
+    return {
+      triggered: true,
+      count: fragmentResult.count
+    }
+  })
 }
 
 function createWindow () {
@@ -493,6 +769,17 @@ function createWindow () {
     mainWindow.webContents.openDevTools()
   } else {
     mainWindow.loadFile(path.join(__dirname, '../build/index.html'))
+    // 生产模式也允许通过 F12 或 Cmd+Option+I 打开 DevTools
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      if ((input.control || input.meta) && input.alt && input.key.toLowerCase() === 'i') {
+        mainWindow.webContents.toggleDevTools()
+        event.preventDefault()
+      }
+      if (input.key === 'F12') {
+        mainWindow.webContents.toggleDevTools()
+        event.preventDefault()
+      }
+    })
   }
 
   mainWindow.webContents.on('new-window', function(event, url){
@@ -505,10 +792,39 @@ function createWindow () {
   })
 }
 
+// 注册全局快捷键
+function registerGlobalShortcuts() {
+  // 注册 CommandOrControl+. 快捷键
+  const ret = globalShortcut.register('CommandOrControl+.', () => {
+    if (!mainWindow) return
+
+    if (mainWindow.isVisible() && mainWindow.isFocused()) {
+      // 窗口已显示且激活，则隐藏
+      mainWindow.hide()
+    } else {
+      // 窗口隐藏、最小化或未激活，则显示并置顶
+      mainWindow.show()
+      mainWindow.focus()
+      // 通知渲染进程聚焦输入框
+      mainWindow.webContents.send('window-shown-via-shortcut')
+    }
+  })
+
+  if (!ret) {
+    console.log('Global shortcut registration failed')
+  }
+}
+
+// 注销全局快捷键
+function unregisterGlobalShortcuts() {
+  globalShortcut.unregisterAll()
+}
+
 // 等待 Electron 准备好后再注册 IPC handler 和创建窗口
 app.whenReady().then(() => {
   registerIpcHandlers()
   createWindow()
+  registerGlobalShortcuts()
 })
 
 app.on('window-all-closed', function () {
@@ -517,4 +833,8 @@ app.on('window-all-closed', function () {
 
 app.on('activate', function () {
   if (mainWindow === null) createWindow()
+})
+
+app.on('will-quit', () => {
+  unregisterGlobalShortcuts()
 })

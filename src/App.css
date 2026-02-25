@@ -24,7 +24,7 @@
   width: calc(100% - 50px);
   height: 100%;
   top: 10px;
-  transition: 100ms top, 100ms opacity;
+  transition: 100ms top, 100ms opacity, 300ms width;
   transition-timing-function: linear;
   position: relative;
   overflow-y: scroll;
@@ -32,6 +32,11 @@
   -webkit-overflow-scrolling: touch;
   background: #fff;
   opacity: 0;
+}
+
+/* 便签模式下内容区域占满全宽 */
+.Content.compact-mode {
+  width: 100%;
 }
 
 .ContentLoaded {
@@ -71,4 +76,89 @@
 
 #dummy textarea {
   height: 0px !important;
+}
+
+/* 紧凑模式（便签模式）样式 */
+.Note.compact-mode .Content {
+  width: 100%;
+}
+
+.Note.compact-mode .Title input {
+  font-size: 1.1em;
+  padding: 15px;
+  width: calc(100% - 30px);
+  padding-right: 15px;
+}
+
+.Note.compact-mode .Line textarea {
+  font-size: 0.9em;
+  padding: 8px 15px;
+  min-height: 28px;
+}
+
+/* 紧凑模式下 textarea 全宽显示 */
+.Note.compact-mode textarea {
+  width: calc(100% - 30px);
+  padding-right: 15px;
+}
+
+.Note.compact-mode .Identifier {
+  padding: 8px 15px;
+  font-size: 0.75em;
+}
+
+.Note.compact-mode .spacer {
+  height: 40vh;
+}
+
+.Note.compact-mode .inSheetAction {
+  margin: 10px;
+  height: 26px;
+}
+
+.Note.compact-mode .inSheetButton {
+  height: 26px;
+  line-height: 26px;
+  font-size: 12px;
+  padding: 0px 8px;
+}
+
+.Note.compact-mode .inSheetButton:first-child {
+  padding-left: 10px;
+}
+
+.Note.compact-mode .inSheetButton:last-child {
+  padding-right: 10px;
+}
+
+.Note.compact-mode .inSheetButton span {
+  display: none;
+}
+
+.Note.compact-mode .inSheetButton svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+/* 超小窗口模式（迷你便签） */
+@media (max-width: 400px), (max-height: 300px) {
+  .Note.compact-mode .Title input {
+    font-size: 1em;
+    padding: 10px 12px;
+  }
+
+  .Note.compact-mode .Line textarea {
+    font-size: 0.85em;
+    padding: 6px 12px;
+  }
+
+  .Note.compact-mode textarea {
+    width: calc(100% - 24px);
+    padding-right: 12px;
+  }
+
+  .Note.compact-mode .Identifier {
+    padding: 6px 12px;
+    font-size: 0.7em;
+  }
 }

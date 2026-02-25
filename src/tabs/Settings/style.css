@@ -207,3 +207,40 @@
 .darkmode .userOptions a:hover, .darkmode .userOptions span:hover {
   color: #aaa;
 }
+
+.shortcutsList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.shortcutItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 13px;
+}
+
+.darkmode .shortcutItem {
+  border-bottom-color: #333;
+  color: #ddd;
+}
+
+.shortcutItem kbd {
+  background: #f0f0f0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  color: #555;
+  border: 1px solid #ddd;
+}
+
+.darkmode .shortcutItem kbd {
+  background: #333;
+  color: #ccc;
+  border-color: #444;
+}

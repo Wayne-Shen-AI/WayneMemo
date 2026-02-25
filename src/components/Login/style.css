@@ -78,3 +78,172 @@
   box-shadow: rgba(0, 0, 0, 0.4) 0px 4px 10px -4px;
   color: #eee;
 }
+
+/* 角色选择界面样式 */
+.RoleSelection {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.roleSelectionContent {
+  background: white;
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 600px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.darkmode .roleSelectionContent {
+  background: #2a2a2a;
+  color: #fff;
+}
+
+.roleSelectionContent h2 {
+  margin: 0 0 10px 0;
+  font-size: 28px;
+  color: #333;
+}
+
+.darkmode .roleSelectionContent h2 {
+  color: #fff;
+}
+
+.roleSubtitle {
+  color: #666;
+  margin-bottom: 30px;
+  font-size: 14px;
+}
+
+.darkmode .roleSubtitle {
+  color: #aaa;
+}
+
+.roleCards {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.roleCard {
+  flex: 1;
+  min-width: 150px;
+  max-width: 180px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 20px 15px;
+  cursor: pointer;
+  transition: all 200ms ease;
+  background: #fafafa;
+}
+
+.darkmode .roleCard {
+  background: #333;
+  border-color: #444;
+}
+
+.roleCard:hover {
+  border-color: #667eea;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+}
+
+.roleCard.selected {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+.roleIcon {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.roleCard h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.darkmode .roleCard h3 {
+  color: #fff;
+}
+
+.roleDesc {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.darkmode .roleDesc {
+  color: #aaa;
+}
+
+.roleFeatures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+}
+
+.featureTag {
+  background: #e8e8e8;
+  color: #666;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+}
+
+.darkmode .featureTag {
+  background: #444;
+  color: #bbb;
+}
+
+.roleCard.selected .featureTag {
+  background: #667eea;
+  color: white;
+}
+
+.confirmRoleBtn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 12px 40px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 200ms ease;
+}
+
+.confirmRoleBtn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.confirmRoleBtn:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+}
+
+.roleHint {
+  margin-top: 20px;
+  font-size: 12px;
+  color: #999;
+}
+
+.darkmode .roleHint {
+  color: #777;
+}

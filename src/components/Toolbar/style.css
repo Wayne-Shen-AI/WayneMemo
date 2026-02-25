@@ -1,3 +1,25 @@
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
 .Toolbar {
   width: 50px;
   border: 0px;
@@ -11,11 +33,12 @@
   box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 5px 0px;
   z-index: 103;
   border-radius: 0px 0px 0px 0px;
-  transition: 300ms width;
+  transition: 300ms width, 200ms transform, 200ms opacity;
   user-select: none;
   -webkit-user-select: none;
   -webkit-app-region: no-drag !important;
   max-width: 100%;
+  animation: slideInRight 300ms ease-out;
 }
 
 .ToolbarWin {

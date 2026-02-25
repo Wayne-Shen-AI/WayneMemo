@@ -3,6 +3,7 @@ import './style.css';
 
 import API from '../../js/api';
 import makeid from '../../js/makeid';
+import SnippetPicker from '../../skills/SnippetPicker';
 
 class App extends Component {
 
@@ -10,6 +11,8 @@ class App extends Component {
     focused: false,
     pHeight: 0,
     text: this.props.children,
+    showSnippetPicker: false,
+    snippetPickerPosition: null
   }
 
   componentDidMount(){
@@ -56,6 +59,55 @@ class App extends Component {
     return tArea.scrollHeight;
   }
 
+  // 计算光标在 textarea 中的像素位置
+  getCursorPixelPosition(){
+    const textarea = this.refs._lineText;
+    const selectionStart = textarea.selectionStart;
+    const text = textarea.value.substring(0, selectionStart);
+
+    // 创建 mirror 元素来计算位置
+    const mirror = document.createElement('div');
+    const style = window.getComputedStyle(textarea);
+
+    mirror.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      visibility: hidden;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font: ${style.font};
+      font-size: ${style.fontSize};
+      font-family: ${style.fontFamily};
+      line-height: ${style.lineHeight};
+      padding: ${style.padding};
+      border: ${style.border};
+      width: ${style.width};
+      box-sizing: border-box;
+    `;
+
+    // 将 text 中的最后一个换行符后的内容放入 span
+    const lines = text.split('\n');
+    const lastLine = lines[lines.length - 1];
+
+    mirror.textContent = text;
+    const span = document.createElement('span');
+    span.textContent = '\u200b'; // 零宽空格作为标记
+    mirror.appendChild(span);
+
+    document.body.appendChild(mirror);
+
+    const rect = span.getBoundingClientRect();
+    const mirrorRect = mirror.getBoundingClientRect();
+
+    document.body.removeChild(mirror);
+
+    return {
+      top: rect.top - mirrorRect.top,
+      left: rect.left - mirrorRect.left
+    };
+  }
+
   handleChange(e){
     if(e){
       this.setState({text: e.target.value});
@@ -99,6 +151,8 @@ class App extends Component {
   }
 
   handleKeyDown(e){
+    console.log('KeyDown triggered:', e.key, e.keyCode, e.code, e.target);
+    console.log('Target element:', e.target.tagName, e.target.className);
     if(e.keyCode == 13){ // 13 = "\n"
       let selectionStart = this.refs._lineText.selectionStart;
       let selectionEnd = this.refs._lineText.selectionEnd;
@@ -277,6 +331,31 @@ class App extends Component {
         e.preventDefault();
         return false;
       }
+    }else if(e.key === '/' || e.code === 'Slash'){
+      // 检查是否在行首输入 /
+      console.log('Slash key detected:', { key: e.key, code: e.code, keyCode: e.keyCode });
+      let selectionStart = this.refs._lineText.selectionStart;
+      let textBefore = this.state.text.substr(0, selectionStart);
+
+      // 只有在行首或空格后才触发快捷码
+      if (selectionStart === 0 || textBefore === '' || textBefore.endsWith(' ') || textBefore.endsWith('\n') || textBefore.endsWith('\t')) {
+        // 不阻止默认行为，让 / 正常输入
+        // 延迟显示 picker，确保 / 已经输入到文本
+        setTimeout(() => {
+          // 获取 textarea 视口位置
+          let rect = this.refs._lineText.getBoundingClientRect();
+          // 计算光标在文本中的像素位置（相对 textarea）
+          let cursorRect = this.getCursorPixelPosition();
+          // fixed 定位需要视口坐标
+          this.setState({
+            showSnippetPicker: true,
+            snippetPickerPosition: {
+              top: rect.top + cursorRect.top + 24,
+              left: rect.left + cursorRect.left
+            }
+          });
+        }, 0);
+      }
     }
   }
 
@@ -288,10 +367,44 @@ class App extends Component {
 
   handleBlur(){
     this.setState({focused: false});
+    // 不再自动关闭 SnippetPicker，因为点击 picker 本身会导致 textarea blur
+    // picker 的关闭由 picker 自己的逻辑处理（选择、取消、或点击外部）
     this.props.onBlur(this.state.text, this.props.id, this.props.index);
   }
 
+  handleSnippetSelect = (content) => {
+    let selectionStart = this.refs._lineText.selectionStart;
+    let selectionEnd = this.refs._lineText.selectionEnd;
+    let textString = this.state.text;
+
+    // 删除输入的 "/" 并插入快捷码内容
+    let newText = textString.substr(0, selectionStart - 1) + content + textString.substr(selectionEnd);
+
+    this.setState({
+      text: newText,
+      showSnippetPicker: false
+    });
+
+    // 聚焦并设置光标位置
+    setTimeout(() => {
+      this.refs._lineText.focus();
+      let newCursorPos = selectionStart - 1 + content.length;
+      this.refs._lineText.selectionStart = newCursorPos;
+      this.refs._lineText.selectionEnd = newCursorPos;
+      this.handleChange();
+    }, 10);
+  }
+
+  handleSnippetCancel = () => {
+    this.setState({ showSnippetPicker: false });
+    this.refs._lineText.focus();
+  }
+
   render() {
+    const { showSnippetPicker, snippetPickerPosition } = this.state;
+    console.log('Line render:', { showSnippetPicker, snippetPickerPosition, hasTextarea: !!this.refs._lineText });
+    console.log('Line component mounted, refs:', Object.keys(this.refs));
+
     return (
       <>
         <div className="Line">
@@ -302,10 +415,20 @@ class App extends Component {
             wrap="soft"
             onFocus={() => this.handleFocus()}
             onBlur={() => this.handleBlur()}
-            onKeyDown={(event) => this.handleKeyDown(event)}
+            onKeyDown={(event) => {
+              console.log('Native onKeyDown fired:', event.key);
+              this.handleKeyDown(event);
+            }}
             onChange={(event) => this.handleChange(event)}
             onPaste={(event) => this.handlePaste(event)}>
           </textarea>
+          {showSnippetPicker && (
+            <SnippetPicker
+              position={snippetPickerPosition}
+              onSelect={this.handleSnippetSelect}
+              onCancel={this.handleSnippetCancel}
+            />
+          )}
         </div>
       </>
     );

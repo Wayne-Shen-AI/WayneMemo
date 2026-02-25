@@ -2,8 +2,6 @@ import React, { Component } from 'react';
 import './style.css';
 import API from '../../js/api';
 
-import WriteGood from '../../addons/write-good/';
-import Conversion from '../../addons/conversion/';
 import Calculator from '../../addons/calculator/';
 import Links from '../../addons/links/';
 
@@ -39,8 +37,6 @@ class App extends Component {
       <>
         <div className="Handy" style={{top: this.state.position, display: (this.state.position === 0) ? "none" : "block"}}>
           <div className={(window && window.process && window.process.type && window.process.platform !== 'browser') ? "HandyInner HandyInnerApp" : "HandyInner"}>
-            {addons.includes("|write-good|") && <WriteGood />}
-            {addons.includes("|conversion|") && <Conversion />}
             {addons.includes("|calculator|") && <Calculator />}
             {addons.includes("|links|") && <Links />}
           </div>

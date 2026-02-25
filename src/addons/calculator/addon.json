@@ -1,5 +1,5 @@
 {
   "slug": "calculator",
-  "display": "Calculator",
-  "description": "Calculator addon calculates equations marked as (x+y*z)= on the current line of your memo."
+  "display": "计算器",
+  "description": "自动计算当前笔记行中标记为 (x+y*z)= 格式的数学表达式。"
 }

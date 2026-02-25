@@ -3,15 +3,13 @@ import './style.css';
 import API from '../../js/api';
 
 let addons = [
-  require('../../addons/write-good/addon.json'),
-  require('../../addons/conversion/addon.json'),
   require('../../addons/links/addon.json'),
   require('../../addons/calculator/addon.json')
 ]
 
 class Addons extends Component {
   state = {
-    addons: API.getData("addons") != null ? API.getData("addons") : "|write-good||conversion||links||calculator|"
+    addons: API.getData("addons") != null ? API.getData("addons") : "|links||calculator|"
   }
 
   toggleAddon(slug){

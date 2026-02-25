@@ -6,15 +6,8 @@ const DEVELOPMENT = false;
 
 // 检测是否在 Electron 环境
 const isElectron = () => {
-  return window && window.process && window.process.type;
+  return window && window.electronAPI;
 };
-
-// 获取 ipcRenderer（仅在 Electron 中可用）
-let ipcRenderer = null;
-if (isElectron()) {
-  const { ipcRenderer: ipc } = window.require('electron');
-  ipcRenderer = ipc;
-}
 
 class API {
   constructor() {
@@ -24,6 +17,7 @@ class API {
     this.logged = true; // 本地版默认已登录
     this.theme = this.getData("theme") || "light";
     this.currentSheet = null;
+    this.defaultAddons = "|links||calculator|"; // 默认插件
 
     console.log("API: init - Local Mode");
 
@@ -67,8 +61,8 @@ class API {
 开始记录您的想法吧！
 `;
 
-    const note = await ipcRenderer.invoke('create-note', '欢迎使用 WayneMemo');
-    await ipcRenderer.invoke('update-note', {
+    const note = await window.electronAPI.createNote('欢迎使用 WayneMemo');
+    await window.electronAPI.updateNote({
       id: note.id,
       content: welcomeContent
     });
@@ -86,7 +80,7 @@ class API {
 
     // 创建新笔记
     if (sheetId === "NEW_SHEET") {
-      const newNote = await ipcRenderer.invoke('create-note', 'Untitled Sheet');
+      const newNote = await window.electronAPI.createNote('Untitled Sheet');
       return {
         id: newNote.id,
         title: newNote.title,
@@ -97,14 +91,14 @@ class API {
 
     // 获取最近访问的笔记
     if (sheetId === "LAST_ACCESSED") {
-      const notes = await ipcRenderer.invoke('get-notes-list');
+      const notes = await window.electronAPI.getNotesList();
       if (notes.length > 0) {
-        const note = await ipcRenderer.invoke('get-note', notes[0].id);
+        const note = await window.electronAPI.getNote(notes[0].id);
         this.currentSheet = note;
         return note;
       } else {
         // 没有笔记时创建新笔记
-        const newNote = await ipcRenderer.invoke('create-note', 'Untitled Sheet');
+        const newNote = await window.electronAPI.createNote('Untitled Sheet');
         return {
           id: newNote.id,
           title: newNote.title,
@@ -115,7 +109,7 @@ class API {
     }
 
     // 获取指定笔记
-    const note = await ipcRenderer.invoke('get-note', parseInt(sheetId));
+    const note = await window.electronAPI.getNote(parseInt(sheetId));
     this.currentSheet = note;
     return note || "removed";
   }
@@ -127,13 +121,13 @@ class API {
     }
 
     if (active === 1) {
-      const notes = await ipcRenderer.invoke('get-notes-list');
+      const notes = await window.electronAPI.getNotesList();
       if (count) {
         return notes.length;
       }
       return notes;
     } else {
-      const notes = await ipcRenderer.invoke('get-archived-notes');
+      const notes = await window.electronAPI.getArchivedNotes();
       if (count) {
         return notes.length;
       }
@@ -146,7 +140,7 @@ class API {
     if (!isElectron()) {
       return [];
     }
-    return await ipcRenderer.invoke('search-notes', term);
+    return await window.electronAPI.searchNotes(term);
   }
 
   // 更新行（段落）
@@ -156,7 +150,7 @@ class API {
     const sheetId = this.currentSheet.id;
 
     // 获取当前笔记内容
-    const note = await ipcRenderer.invoke('get-note', sheetId);
+    const note = await window.electronAPI.getNote(sheetId);
     if (!note) return;
 
     let lines = note.lines;
@@ -184,7 +178,7 @@ class API {
 
     // 将 lines 转换为 markdown 内容
     const content = lines.map(line => line.text).join('\n');
-    await ipcRenderer.invoke('update-note', {
+    await window.electronAPI.updateNote({
       id: sheetId,
       content: content
     });
@@ -193,7 +187,7 @@ class API {
   // 更新标题
   async updateTitle(text, sheetId) {
     if (!isElectron()) return;
-    await ipcRenderer.invoke('update-note', {
+    await window.electronAPI.updateNote({
       id: sheetId,
       title: text
     });
@@ -202,7 +196,7 @@ class API {
   // 归档/激活笔记
   async archiveUpdate(sheetId, toStatus) {
     if (!isElectron()) return;
-    await ipcRenderer.invoke('archive-note', {
+    await window.electronAPI.archiveNote({
       id: sheetId,
       active: toStatus
     });
@@ -211,7 +205,81 @@ class API {
   // 删除笔记
   async deleteSheet(sheetId) {
     if (!isElectron()) return;
-    await ipcRenderer.invoke('delete-note', sheetId);
+    await window.electronAPI.deleteNote(sheetId);
+  }
+
+  // ========== 技能系统方法 ==========
+
+  // 获取用户角色
+  async getUserRole() {
+    if (!isElectron()) return null;
+    return await window.electronAPI.getUserRole();
+  }
+
+  // 设置用户角色
+  async setUserRole(role) {
+    if (!isElectron()) return { success: false };
+    return await window.electronAPI.setUserRole(role);
+  }
+
+  // 获取启用的技能列表
+  async getEnabledSkills() {
+    if (!isElectron()) return ['quickSearch', 'history'];
+    return await window.electronAPI.getEnabledSkills();
+  }
+
+  // 设置启用的技能
+  async setEnabledSkills(skills) {
+    if (!isElectron()) return { success: false };
+    return await window.electronAPI.setEnabledSkills(skills);
+  }
+
+  // 获取所有快捷码
+  async getSnippets() {
+    if (!isElectron()) return [];
+    return await window.electronAPI.getSnippets();
+  }
+
+  // 添加快捷码
+  async addSnippet(snippet) {
+    if (!isElectron()) return { success: false };
+    return await window.electronAPI.addSnippet(snippet);
+  }
+
+  // 删除快捷码
+  async deleteSnippet(snippetId) {
+    if (!isElectron()) return { success: false };
+    return await window.electronAPI.deleteSnippet(snippetId);
+  }
+
+  // 更新快捷码
+  async updateSnippet(snippetId, updates) {
+    if (!isElectron()) return { success: false };
+    return await window.electronAPI.updateSnippet(snippetId, updates);
+  }
+
+  // 增加快捷码使用次数
+  async incrementSnippetUsage(snippetId) {
+    if (!isElectron()) return { success: false };
+    return await window.electronAPI.incrementSnippetUsage(snippetId);
+  }
+
+  // 添加操作日志
+  async addOperationLog(log) {
+    if (!isElectron()) return { success: false };
+    return await window.electronAPI.addOperationLog(log);
+  }
+
+  // 获取操作日志
+  async getOperationLogs(noteId) {
+    if (!isElectron()) return [];
+    return await window.electronAPI.getOperationLogs(noteId);
+  }
+
+  // 回滚笔记
+  async rollbackNote(noteId, logId) {
+    if (!isElectron()) return { success: false };
+    return await window.electronAPI.rollbackNote(noteId, logId);
   }
 
   // 获取主题

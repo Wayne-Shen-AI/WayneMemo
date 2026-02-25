@@ -1,0 +1,133 @@
+.SnippetPicker {
+  position: absolute;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  width: 280px;
+  z-index: 1000;
+  overflow: hidden;
+  animation: snippetFadeIn 100ms ease;
+}
+
+@keyframes snippetFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.darkmode .SnippetPicker {
+  background: #2a2a2a;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.SnippetPickerInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-bottom: 1px solid #e5e5e5;
+  outline: none;
+  font-size: 14px;
+  background: transparent;
+  color: inherit;
+  box-sizing: border-box;
+}
+
+.darkmode .SnippetPickerInput {
+  border-bottom-color: #444;
+  color: #fff;
+}
+
+.SnippetPickerInput::placeholder {
+  color: #999;
+}
+
+.SnippetPickerList {
+  max-height: 300px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.SnippetPickerEmpty {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+}
+
+.darkmode .SnippetPickerEmpty {
+  color: #777;
+}
+
+.SnippetItem {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 100ms ease;
+}
+
+.darkmode .SnippetItem {
+  border-bottom-color: #333;
+}
+
+.SnippetItem:hover,
+.SnippetItem.selected {
+  background: #f5f5f5;
+}
+
+.darkmode .SnippetItem:hover,
+.darkmode .SnippetItem.selected {
+  background: #333;
+}
+
+.SnippetAlias {
+  font-weight: 600;
+  font-size: 14px;
+  color: #667eea;
+  margin-bottom: 4px;
+}
+
+.SnippetPreview {
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.darkmode .SnippetPreview {
+  color: #aaa;
+}
+
+.SnippetPickerFooter {
+  padding: 8px 12px;
+  background: #f9f9f9;
+  border-top: 1px solid #e5e5e5;
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: #666;
+}
+
+.darkmode .SnippetPickerFooter {
+  background: #222;
+  border-top-color: #444;
+  color: #888;
+}
+
+.SnippetPickerFooter kbd {
+  background: #e0e0e0;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 10px;
+}
+
+.darkmode .SnippetPickerFooter kbd {
+  background: #444;
+  color: #ccc;
+}

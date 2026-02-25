@@ -39,28 +39,67 @@ class App extends Component {
     this.setState({text});
   }
 
-
   renderCalculated(text){
-    text = text.replace(/\) =/g, ")=");
-    if(text.includes(")=")){
-      let calculatables = [];
-      text.split(")=").forEach(calculatable => {
-        if(calculatable.includes("(")){
-          calculatables.push(calculatable.split("(").slice(1).join("("));
-        }
-      })
-      return calculatables.map((calcable, i) => {
-        return <div className="calculatedNode" key={i}>[{i+1}] = {evil(calcable)}</div>
+    // 改进的计算式识别：自动识别数学表达式
+    let calculatables = [];
+    let processedText = text;
+
+    // 1. 首先匹配带括号的完整表达式（包括括号外的运算）
+    // 例如：(3+4)*5, 2*(10+5), (100-50)/2
+    const parenWithOpRegex = /\([^()]+\)\s*[\+\-\*\/]\s*\d+(?:\.\d+)?|\d+(?:\.\d+)?\s*[\+\-\*\/]\s*\([^()]+\)/g;
+    let parenWithOpMatches = processedText.match(parenWithOpRegex);
+    if (parenWithOpMatches) {
+      parenWithOpMatches.forEach(match => {
+        calculatables.push(match.trim());
+        // 从文本中移除已匹配的部分，避免重复
+        processedText = processedText.replace(match, '');
       });
-    }else{
+    }
+
+    // 2. 然后匹配纯括号表达式
+    // 例如：(3+4), (10*20)
+    const parenCalcRegex = /\([^()]+[\+\-\*\/][^()]+\)/g;
+    let parenMatches = processedText.match(parenCalcRegex);
+    if (parenMatches) {
+      parenMatches.forEach(match => {
+        calculatables.push(match.trim());
+        processedText = processedText.replace(match, '');
+      });
+    }
+
+    // 3. 最后匹配简单的数学表达式（不带括号）
+    // 例如：3+4, 10*20, 100-20*3+50
+    const simpleCalcRegex = /\d+(?:\.\d+)?(?:\s*[\+\-\*\/]\s*\d+(?:\.\d+)?)+/g;
+    let simpleMatches = processedText.match(simpleCalcRegex);
+    if (simpleMatches) {
+      simpleMatches.forEach(match => {
+        calculatables.push(match.trim());
+      });
+    }
+
+    if (calculatables.length > 0) {
+      // 去重
+      calculatables = [...new Set(calculatables)];
+
+      return calculatables.map((calcable, i) => {
+        const result = evil(calcable);
+        return (
+          <div className="calculatedNode" key={i}>
+            {calcable} = {result}
+          </div>
+        );
+      });
+    } else {
       return null;
     }
   }
 
   render() {
     if(this.state.text){
-      let includes = this.state.text.replace(") =", ")=").includes(")=");
-      if(includes){
+      // 改进的计算式检测：识别包含运算符的表达式
+      const hasCalc = /\d+\s*[\+\-\*\/]\s*\d+/.test(this.state.text);
+
+      if(hasCalc){
         return (
           <>
             <div className="AddonItem">

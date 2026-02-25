@@ -11,11 +11,19 @@ class Settings extends Component {
 
   componentDidMount() {
     // 获取数据目录路径
-    if (window.require) {
-      const { ipcRenderer } = window.require('electron');
-      ipcRenderer.invoke('get-data-path').then(path => {
+    if (window.electronAPI) {
+      window.electronAPI.getDataPath().then(path => {
         this.setState({ dataPath: path });
       });
+    }
+  }
+
+  handleOpenDataFolder = async () => {
+    if (window.electronAPI && window.electronAPI.openDataFolder) {
+      const result = await window.electronAPI.openDataFolder();
+      if (!result.success) {
+        alert('无法打开文件夹：' + result.error);
+      }
     }
   }
 
@@ -49,8 +57,51 @@ class Settings extends Component {
 
         <h5>数据存储位置</h5>
         <p className="sub">您的笔记数据保存在以下位置：</p>
-        <div className="label" style={{ fontSize: 13, wordBreak: 'break-all' }}>
+        <div className="label" style={{ fontSize: 13, wordBreak: 'break-all', cursor: 'pointer', color: '#0066cc' }}
+             onClick={this.handleOpenDataFolder}
+             title="点击打开文件夹">
           {this.state.dataPath || 'WayneMemo_Data (文档目录下)'}
+        </div>
+        <p className="sub" style={{ fontSize: 11, marginTop: 5 }}>点击路径可在文件管理器中打开</p>
+
+        <h5>快捷键</h5>
+        <div className="shortcutsList">
+          <div className="shortcutItem">
+            <kbd>Cmd/Ctrl + F</kbd>
+            <span>搜索笔记内容</span>
+          </div>
+          <div className="shortcutItem">
+            <kbd>Cmd/Ctrl + S</kbd>
+            <span>打开笔记列表</span>
+          </div>
+          <div className="shortcutItem">
+            <kbd>Cmd/Ctrl + U</kbd>
+            <span>查看归档笔记</span>
+          </div>
+          <div className="shortcutItem">
+            <kbd>Cmd/Ctrl + E</kbd>
+            <span>插件管理</span>
+          </div>
+          <div className="shortcutItem">
+            <kbd>Cmd/Ctrl + Shift + H</kbd>
+            <span>操作历史/撤销</span>
+          </div>
+          <div className="shortcutItem">
+            <kbd>Cmd/Ctrl + ,</kbd>
+            <span>设置</span>
+          </div>
+          <div className="shortcutItem">
+            <kbd>Esc</kbd>
+            <span>关闭侧边栏</span>
+          </div>
+          <div className="shortcutItem">
+            <kbd>Cmd/Ctrl + .</kbd>
+            <span>全局快捷键：显示/隐藏窗口</span>
+          </div>
+          <div className="shortcutItem">
+            <kbd>/</kbd>
+            <span>触发快捷码(Snippets)</span>
+          </div>
         </div>
 
         <h5>关于 WayneMemo</h5>

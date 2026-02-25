@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import './style.css';
-import { Addons, Archives, Search, Settings, Sheets } from '../../tabs'
+import { Addons, Archives, History, Search, Settings, Sheets, Snippets } from '../../tabs'
 import API from '../../js/api';
 
 class Toolbar extends Component {
@@ -57,12 +57,16 @@ class Toolbar extends Component {
         return <Addons/>;
       case "archives":
         return <Archives/>;
+      case "history":
+        return <History sheet={this.props.sheet}/>;
       case "search":
         return <Search/>;
       case "settings":
         return <Settings/>;
       case "sheets":
         return <Sheets/>;
+      case "snippets":
+        return <Snippets/>;
       default:
         return null;
     }
@@ -104,6 +108,14 @@ class Toolbar extends Component {
               </div>
             </div>
             <div className="Bottom">
+              <div className={this.state.currentTab === "snippets" ? "Item ItemActive": "Item"} onClick={() => API.event.emit("toggle", "snippets")}>
+                <div className="ToolTip"><span>快捷码</span></div>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M9.5 3A6.5 6.5 0 0 0 3 9.5c0 1.61.59 3.09 1.56 4.23l.09.1.1.09 6.21 6.22 6.22-6.22.09-.1.1-.09A6.5 6.5 0 0 0 9.5 3zm0 9A2.5 2.5 0 1 1 12 9.5 2.5 2.5 0 0 1 9.5 12z"/></svg>
+              </div>
+              <div className={this.state.currentTab === "history" ? "Item ItemActive": "Item"} onClick={() => API.event.emit("toggle", "history")}>
+                <div className="ToolTip"><span>历史</span></div>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm1-8.5V7a1 1 0 0 0-2 0v5a1 1 0 0 0 .29.71l3 3a1 1 0 0 0 1.42-1.42l-2.71-2.71z"/></svg>
+              </div>
               <div className={this.state.currentTab === "addons" ? "Item ItemActive": "Item"} onClick={() => API.event.emit("toggle", "addons")}>
                 <div className="ToolTip"><span>插件</span></div>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M17 22a2 2 0 0 1-2-2v-1a1 1 0 0 0-1-1 1 1 0 0 0-1 1v1a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2v-3H5a3 3 0 1 1 0-6h1V8c0-1.11.9-2 2-2h3V5a3 3 0 1 1 6 0v1h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1a1 1 0 0 0-1 1 1 1 0 0 0 1 1h1a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3zm3-2v-3h-1a3 3 0 1 1 0-6h1V8h-3a2 2 0 0 1-2-2V5a1 1 0 0 0-1-1 1 1 0 0 0-1 1v1a2 2 0 0 1-2 2H8v3a2 2 0 0 1-2 2H5a1 1 0 0 0-1 1 1 1 0 0 0 1 1h1a2 2 0 0 1 2 2v3h3v-1a3 3 0 1 1 6 0v1h3z"/></svg>

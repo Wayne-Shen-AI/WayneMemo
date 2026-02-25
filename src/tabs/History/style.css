@@ -1,0 +1,314 @@
+.HistoryTab {
+  padding: 20px;
+}
+
+.historyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.historyHeader h4 {
+  margin: 0 0 5px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.darkmode .historyHeader h4 {
+  color: #fff;
+}
+
+.btnRefresh {
+  background: #667eea;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btnRefresh:hover {
+  background: #5a6fd6;
+}
+
+.historyEmpty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.historyEmpty .sub {
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.historyItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  border-left: 3px solid #ddd;
+  transition: all 100ms ease;
+}
+
+.historyItem:hover {
+  background: #eee;
+}
+
+.darkmode .historyItem {
+  background: #2a2a2a;
+  border-left-color: #444;
+}
+
+.darkmode .historyItem:hover {
+  background: #333;
+}
+
+.historyItem.latest {
+  border-left-color: #667eea;
+  background: #f0f4ff;
+}
+
+.darkmode .historyItem.latest {
+  background: #1e2642;
+  border-left-color: #667eea;
+}
+
+.historyInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.historyTime {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.darkmode .historyTime {
+  color: #fff;
+}
+
+.latestTag {
+  font-size: 11px;
+  background: #667eea;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+.historyAction {
+  font-size: 12px;
+  color: #667eea;
+  margin-bottom: 2px;
+}
+
+.historyTitle {
+  font-size: 12px;
+  color: #999;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.darkmode .historyTitle {
+  color: #777;
+}
+
+.historyActions {
+  display: flex;
+  gap: 8px;
+}
+
+.btnPreview {
+  background: transparent;
+  color: #667eea;
+  border: 1px solid #667eea;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 100ms ease;
+}
+
+.btnPreview:hover {
+  background: #667eea;
+  color: white;
+}
+
+.btnRollback {
+  background: transparent;
+  color: #e67e22;
+  border: 1px solid #e67e22;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 100ms ease;
+}
+
+.btnRollback:hover {
+  background: #e67e22;
+  color: white;
+}
+
+/* 预览弹窗 */
+.historyPreviewOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.historyPreviewModal {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.darkmode .historyPreviewModal {
+  background: #2a2a2a;
+}
+
+.previewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.darkmode .previewHeader {
+  border-bottom-color: #444;
+}
+
+.previewHeader h5 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.darkmode .previewHeader h5 {
+  color: #fff;
+}
+
+.btnClose {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #999;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.btnClose:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.darkmode .btnClose:hover {
+  background: #444;
+  color: #fff;
+}
+
+.previewContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+.previewTitle {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.darkmode .previewTitle {
+  color: #fff;
+  border-bottom-color: #444;
+}
+
+.previewBody {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #444;
+  font-family: monospace;
+  white-space: pre-wrap;
+}
+
+.darkmode .previewBody {
+  color: #ccc;
+}
+
+.previewLine {
+  min-height: 1.6em;
+}
+
+.previewActions {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid #eee;
+  justify-content: flex-end;
+}
+
+.darkmode .previewActions {
+  border-top-color: #444;
+}
+
+.btnSecondary {
+  background: #e0e0e0;
+  color: #666;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.darkmode .btnSecondary {
+  background: #444;
+  color: #aaa;
+}
+
+.btnSecondary:hover {
+  background: #d0d0d0;
+}
+
+.darkmode .btnSecondary:hover {
+  background: #555;
+}

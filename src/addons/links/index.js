@@ -32,23 +32,49 @@ class App extends Component {
   }
 
   renderLinks(text){
-    let links = text.match(/http[^\s]*/g);
+    // 改进的 URL 匹配：支持 http(s)://、www.、常见域名
+    const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|(\b[a-zA-Z0-9][-a-zA-Z0-9]*\.(com|cn|net|org|edu|gov|io|co|me|app|dev|tech|ai|xyz|info|biz|tv|cc|top|club|vip|shop|site|online|store|cloud|link|blog|news|video|music|photo|game|social|chat|mail|wiki|forum|space|work|life|world|city|zone|plus|pro|ltd|group|team|studio|design|art|media|agency|solutions|services|network|digital|systems|technology|software|web|mobile|data|center|security|consulting|marketing|finance|legal|health|education|training|institute|academy|school|college|university|research|science|lab|engineering|innovation|future|global|international|asia|europe|africa)[^\s]*)/gi;
+
+    let links = text.match(urlRegex);
+    if (!links) return null;
+
+    // 去重
+    links = [...new Set(links)];
+
     return links.map((link, i) => {
-      if(link.endsWith(".png") || link.endsWith(".jpg") || link.endsWith(".gif") || link.endsWith(".svg") || link.endsWith(".JPG") || link.endsWith(".jpeg") || link.endsWith(".JPEG")){
-        return <div className="imageCarrier" key={i}><a href={link} target="_blank" rel="noopener noreferrer"><img src={link} style={{maxWidth: "100%", maxHeight: "100%"}}/></a></div>
+      // 标准化链接：如果没有协议，自动添加 https://
+      let normalizedLink = link;
+      if (!link.startsWith('http://') && !link.startsWith('https://')) {
+        normalizedLink = 'https://' + link;
+      }
+
+      // 提取域名用于显示
+      let displayDomain = link;
+      try {
+        const url = new URL(normalizedLink);
+        displayDomain = url.hostname;
+      } catch (e) {
+        // 如果 URL 解析失败，使用原始链接的第一部分
+        displayDomain = link.split('/')[0].replace(/^https?:\/\//, '').replace(/^www\./, '');
+      }
+
+      // 判断是否是图片
+      const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.bmp', '.ico'];
+      const isImage = imageExtensions.some(ext => link.toLowerCase().endsWith(ext));
+
+      if(isImage){
+        return <div className="imageCarrier" key={i}><a href={normalizedLink} target="_blank" rel="noopener noreferrer"><img src={normalizedLink} alt="preview" style={{maxWidth: "100%", maxHeight: "100%"}}/></a></div>
       }else{
-        if(link.includes("//")){
-          return <a key={i} href={link} className="linkCarrier" target="_blank" rel="noopener noreferrer">Link from <b>{link.split("//")[1].split("/")[0]}</b></a>
-        }else{
-          return null;
-        }
+        return <a key={i} href={normalizedLink} className="linkCarrier" target="_blank" rel="noopener noreferrer">Link from <b>{displayDomain}</b></a>
       }
     });
   }
 
   render() {
     if(this.state.text){
-      let includes = this.state.text.includes("http");
+      // 改进的 URL 检测：支持多种格式
+      const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|(\b[a-zA-Z0-9][-a-zA-Z0-9]*\.(com|cn|net|org|edu|gov|io|co|me|app|dev|tech|ai|xyz|info|biz|tv|cc|top)\b)/i;
+      let includes = urlRegex.test(this.state.text);
       if(includes){
         return (
           <>

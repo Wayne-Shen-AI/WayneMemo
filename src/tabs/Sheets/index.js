@@ -11,11 +11,20 @@ class Sheets extends Component {
   }
 
   componentDidMount(){
+    this.loadSheets();
+
+    // 监听刷新事件
+    API.event.on('refreshSheets', () => {
+      this.loadSheets();
+    });
+  }
+
+  loadSheets = () => {
     API.getSheets(1).then(sheets => {
       if(sheets.length){
-        this.setState({sheets});
+        this.setState({sheets, noSheets: false});
       }else{
-        this.setState({noSheets: true});
+        this.setState({sheets: [], noSheets: true});
       }
     });
 

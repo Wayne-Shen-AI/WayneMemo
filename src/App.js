@@ -10,6 +10,9 @@ import Cover from './components/Cover';
 import AppBar from './components/AppBar';
 import Login from './components/Login';
 
+// 技能组件
+import QuickSearch from './skills/QuickSearch';
+
 import makeid from './js/makeid';
 
 import API from './js/api';
@@ -22,8 +25,21 @@ class App extends Component {
     cursorPosition: 0,
     logged: false,
     forceLogout: false,
-    theme: API.getData("theme") || "light"
+    theme: API.getData("theme") || "light",
+    enabledSkills: ['quickSearch', 'history'], // 默认技能
+    isCompactMode: false, // 便签模式（窗口缩小时自动启用）
+    windowWidth: 1200,
+    windowHeight: 800,
+    showFragmentFilter: false, // 是否显示碎片笔记过滤视图
+    fragmentNotesData: null // 碎片笔记数据
   };
+
+  constructor(props) {
+    super(props);
+    this.lastLogTime = 0;
+    this.lastLogContent = '';
+    this.resizeTimeout = null; // 用于防抖
+  }
 
   componentDidMount(){
 
@@ -43,14 +59,23 @@ class App extends Component {
       }else if ((e.ctrlKey || e.metaKey) && e.keyCode === 69) {
         API.event.emit("toggle", "addons");
         e.preventDefault();
+      }else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.keyCode === 72) {
+        API.event.emit("toggle", "history");
+        e.preventDefault();
       }else if(e.keyCode === 27){
         API.event.emit("toggle", false);
         e.preventDefault();
       }
     })
 
-    API.event.on("login", (status) => {
+    API.event.on("login", async (status) => {
       this.setState({logged: status, forceLogout: (status === false)});
+
+      // 加载用户启用的技能
+      if (status) {
+        const skills = await API.getEnabledSkills();
+        this.setState({ enabledSkills: skills });
+      }
     })
 
     API.event.on("theme", (newTheme) => {
@@ -87,6 +112,101 @@ class App extends Component {
       });
       API.event.emit("toggle", false);
     })
+
+    // 监听窗口大小变化，自动切换便签模式
+    this.handleResize();
+    window.addEventListener('resize', this.handleResize);
+
+    // 监听全局快捷键唤醒事件，聚焦第一个输入框
+    if (window.electronAPI && window.electronAPI.onWindowShownViaShortcut) {
+      window.electronAPI.onWindowShownViaShortcut(() => {
+        // 查找第一个可见的输入框或文本域
+        setTimeout(() => {
+          const input = document.querySelector('input:not([type="hidden"]), textarea');
+          if (input) {
+            input.focus();
+          }
+        }, 100);
+      });
+    }
+
+    // 监听碎片笔记通知点击事件
+    if (window.electronAPI && window.electronAPI.onShowFragmentNotes) {
+      window.electronAPI.onShowFragmentNotes((event, data) => {
+        console.log('收到碎片笔记通知:', data);
+        // 设置一个标记，表示当前正在显示碎片笔记过滤视图
+        this.setState({
+          showFragmentFilter: true,
+          fragmentNotesData: data
+        });
+
+        // 聚焦到第一个输入框
+        setTimeout(() => {
+          const input = document.querySelector('input:not([type="hidden"]), textarea');
+          if (input) {
+            input.focus();
+          }
+        }, 100);
+      });
+    }
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.handleResize);
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout);
+    }
+  }
+
+  handleResize = () => {
+    // 清除之前的定时器
+    if (this.resizeTimeout) {
+      clearTimeout(this.resizeTimeout);
+    }
+
+    // 使用防抖优化性能，但保持响应速度
+    this.resizeTimeout = setTimeout(() => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      // 当窗口宽度小于500或高度小于700时，进入便签模式
+      const isCompactMode = width < 500 || height < 700;
+
+      // 强制更新状态，确保UI重新渲染
+      this.setState({
+        windowWidth: width,
+        windowHeight: height,
+        isCompactMode
+      }, () => {
+        // 状态更新后的回调，用于调试
+        console.log(`窗口尺寸: ${width}x${height}, 便签模式: ${isCompactMode ? '开启' : '关闭'}`);
+      });
+    }, 100); // 100ms 防抖延迟，保证流畅性
+  }
+
+  async logOperation(action) {
+    if (!this.state.sheet) return;
+
+    // 防抖机制：5秒内不重复记录相同内容的操作
+    const now = Date.now();
+    const content = this.state.lines.map(l => l.text).join('\n');
+
+    if (now - this.lastLogTime < 5000 && content === this.lastLogContent) {
+      return; // 跳过重复记录
+    }
+
+    this.lastLogTime = now;
+    this.lastLogContent = content;
+
+    const snapshot = {
+      title: this.state.sheet.title,
+      content: content
+    };
+
+    await API.addOperationLog({
+      noteId: this.state.sheet.id,
+      action: action,
+      snapshot: snapshot
+    });
   }
 
   getDateIdentifier(date){
@@ -113,6 +233,9 @@ class App extends Component {
       return null;
     }
 
+    // 记录操作日志
+    this.logOperation('concat');
+
     let lineIndex = from == "up" ? i-1 : i+1;
     let focusIndex = from == "up" ? i-1 : i;
     if(lines[lineIndex]){
@@ -136,6 +259,9 @@ class App extends Component {
     let lines = this.state.lines;
     let date = id.split("-")[0].split("!")[1];
 
+    // 记录操作日志
+    this.logOperation('split');
+
     if(lines.length == i+1){
       let today = new Date();
       today = String(today.getDate()).padStart(2, '0') + "/" + String(today.getMonth() + 1).padStart(2, '0') + "/" + today.getFullYear();
@@ -157,6 +283,9 @@ class App extends Component {
     let lines = this.state.lines;
     let date = id.split("-")[0].split("!")[1];
     let cursorPosition = "end";
+
+    // 记录操作日志
+    this.logOperation('paste');
 
     for (var i = 0; i < textArray.length; i++) {
       let text = textArray[i].replace(/^\s+|\s+$/g, "");
@@ -203,6 +332,9 @@ class App extends Component {
     let lines = this.state.lines;
 
     if(lines[i].text != text || lines[i].old_key){
+      // 记录操作日志
+      this.logOperation('update');
+
       if(lines[i].old_key){
         API.updateLine(lineId, i, text, "key", lines[i].old_key);
         lines[i].old_key = "";
@@ -262,12 +394,14 @@ class App extends Component {
   }
 
   renderApp(){
+    const { isCompactMode, showFragmentFilter } = this.state;
+
     if(this.state.logged){
       return(
-        <div className="AppHolder">
-          <div className="Note" key={this.state.logged}>
+        <div className="AppHolder" data-filter={showFragmentFilter ? 'fragments' : ''}>
+          <div className={`Note${isCompactMode ? ' compact-mode' : ''}`} key={this.state.logged}>
             <AppBar spacer={true}/>
-            <div className={this.state.sheetLoading ? "Content" : "Content ContentLoaded"} ref="_textScroller" id="content">
+            <div className={`${this.state.sheetLoading ? "Content" : "Content ContentLoaded"}${isCompactMode ? ' compact-mode' : ''}`} ref="_textScroller" id="content">
               {this.state.sheet &&
                 <Title
                   shouldFocused={this.state.focusIndex == "title"}
@@ -284,7 +418,7 @@ class App extends Component {
                 <textarea id="dummyTextarea"></textarea>
               </div>
             </div>
-            <Toolbar/>
+            {!isCompactMode && <Toolbar sheet={this.state.sheet}/>}
           </div>
         </div>
       );
@@ -300,11 +434,16 @@ class App extends Component {
   }
 
   render() {
+    const { enabledSkills, logged, isCompactMode, windowWidth, windowHeight } = this.state;
+
     return (
       <div className={`App${this.state.theme == "dark" ? " darkmode": ""}${(window.navigator.platform.includes('Win') || window.navigator.platform.includes('Linux')) ? " win" : ""}`}>
         {this.renderApp()}
         <Cover/>
         <AppBar theme={this.state.theme}/>
+
+        {/* 技能组件 */}
+        {logged && enabledSkills.includes('quickSearch') && <QuickSearch/>}
       </div>
     );
   }

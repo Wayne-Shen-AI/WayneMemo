@@ -33,13 +33,24 @@ class Title extends Component {
     }
   }
 
-  handleBlur(e){
+  async handleBlur(e){
     let text = e.target.value;
     if(text !== this.props.sheet.title){
       if(!text){
         text = "未命名笔记";
       }
       document.title = text + " | WayneMemo";
+
+      // 记录操作日志
+      await API.addOperationLog({
+        noteId: this.props.sheet.id,
+        action: 'title_update',
+        snapshot: {
+          title: this.props.sheet.title,
+          content: ''
+        }
+      });
+
       API.updateTitle(text, this.props.sheet.id);
     }
   }

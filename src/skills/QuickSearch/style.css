@@ -1,0 +1,192 @@
+.QuickSearchOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 100px;
+  z-index: 10000;
+  animation: fadeIn 150ms ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.QuickSearchModal {
+  background: white;
+  border-radius: 12px;
+  width: 600px;
+  max-width: 90vw;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  animation: slideDown 150ms ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.darkmode .QuickSearchModal {
+  background: #2a2a2a;
+  color: #fff;
+}
+
+.QuickSearchInputWrapper {
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.darkmode .QuickSearchInputWrapper {
+  border-bottom-color: #444;
+}
+
+.QuickSearchIcon {
+  font-size: 20px;
+  margin-right: 12px;
+  opacity: 0.5;
+}
+
+.QuickSearchInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 18px;
+  background: transparent;
+  color: inherit;
+}
+
+.QuickSearchInput::placeholder {
+  color: #999;
+}
+
+.QuickSearchHint {
+  font-size: 12px;
+  color: #999;
+  margin-left: 12px;
+}
+
+.QuickSearchResults {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.QuickSearchEmpty {
+  padding: 40px;
+  text-align: center;
+  color: #999;
+  font-size: 14px;
+}
+
+.QuickSearchResultItem {
+  padding: 12px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
+  transition: background 100ms ease;
+}
+
+.darkmode .QuickSearchResultItem {
+  border-bottom-color: #333;
+}
+
+.QuickSearchResultItem:hover,
+.QuickSearchResultItem.selected {
+  background: #f5f5f5;
+}
+
+.darkmode .QuickSearchResultItem:hover,
+.darkmode .QuickSearchResultItem.selected {
+  background: #333;
+}
+
+.ResultTitle {
+  font-weight: 600;
+  font-size: 15px;
+  margin-bottom: 4px;
+  color: #333;
+}
+
+.darkmode .ResultTitle {
+  color: #fff;
+}
+
+.ResultTitle mark {
+  background: #ffeb3b;
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.ResultPreview {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.darkmode .ResultPreview {
+  color: #aaa;
+}
+
+.ResultPreview mark {
+  background: #ffeb3b;
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.ResultMeta {
+  font-size: 11px;
+  color: #999;
+  display: flex;
+  gap: 12px;
+}
+
+.darkmode .ResultMeta {
+  color: #777;
+}
+
+.QuickSearchFooter {
+  padding: 10px 20px;
+  background: #f9f9f9;
+  border-top: 1px solid #e5e5e5;
+  display: flex;
+  gap: 20px;
+  font-size: 12px;
+  color: #666;
+}
+
+.darkmode .QuickSearchFooter {
+  background: #222;
+  border-top-color: #444;
+  color: #888;
+}
+
+.QuickSearchFooter kbd {
+  background: #e0e0e0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.darkmode .QuickSearchFooter kbd {
+  background: #444;
+  color: #ccc;
+}
